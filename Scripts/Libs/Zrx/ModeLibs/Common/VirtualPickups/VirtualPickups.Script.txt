@@ -6,20 +6,43 @@
 
 #Include "TextLib" as TL
 
+#Const C_Position_Invalid <-1., -1., -1.>
+
+#Struct K_MarkerConfig {
+	Boolean IsTurning;
+	Boolean ShowArmor;
+	Text Label;
+	Vec3 Box;
+	Text Icon;
+	Vec3 Color;
+	Text ImageUrl;
+	Text ManialinkFrameId;
+	Real DistMin;
+	Real DistMax;
+	CUIConfigMarker::EMiniMapVisibility MiniMapVisibility;
+	CUIConfigMarker::EHudVisibility HudVisibility;
+	Boolean HideOnSelf;
+	Real Gauge;
+}
+
 #Struct K_VirtualPickup {
 	Text Id;
 	CNod Holder;							// Can be player, landmark or Null (dropped)
 	Vec3 Position;						// Position in worldspace
-	CUIConfigMarker Marker;
+	K_MarkerConfig MarkerConfig;
 }
 
-declare K_VirtualPickup[Text] G_Pickups;
+declare K_VirtualPickup[Text] G_Pickups; // PickupId -> Pickup
+declare CUIConfigMarker[Text] G_Markers; // PickupId -> Marker, Id might be valid in but without entry in Markers
 
 /**
  * FOR INTERNAL USE ONLY.
  * Removes the marker for the given Pickup from all UIs.
  */
-Void Private_RemoveMarkers(CUIConfigMarker MarkerToRemove) {
+Void Private_RemoveMarker(Text PickupId) {
+	declare CUIConfigMarker MarkerToRemove = G_Markers.get(PickupId, Null);
+	if (MarkerToRemove == Null) return;
+	
 	// Cannot remove marker from UIManager.UIAll in certain situations; Will crash the script
 	foreach (UI in UIManager.UI) {
 		// Cannot use UI.Markers.remove(MarkerToRemove) because of the way UIAll references are handled in the engine
@@ -36,27 +59,33 @@ Void Private_RemoveMarkers(CUIConfigMarker MarkerToRemove) {
  * FOR INTERNAL USE ONLY.
  * Copies over all configuration from the Source Marker to the target Marker.
  */
-Void Private_ApplyMarkerConfig(CUIConfigMarker Source, CUIConfigMarker Target) {
-	Target.IsTurning = Source.IsTurning;
-	Target.ShowArmor = Source.ShowArmor;
-	Target.Label = Source.Label;
-	Target.Box = Source.Box;
-	Target.Icon = Source.Icon;
-	Target.Color = Source.Color;
-	Target.ImageUrl = Source.ImageUrl;
-	Target.ManialinkFrameId = Source.ManialinkFrameId;
-	Target.DistMin = Source.DistMin;
-	Target.DistMax = Source.DistMax;
-	Target.MiniMapVisibility = Source.MiniMapVisibility;
-	Target.HudVisibility = Source.HudVisibility;
-	Target.HideOnSelf = Source.HideOnSelf;
-	Target.Gauge = Source.Gauge;
+Void Private_ApplyMarkerConfig(Text Id) {
+	assert(G_Pickups.existskey(Id), """No pickup with Id "{{{Id}}}" found""");
+	
+	declare CUIConfigMarker Marker = G_Markers.get(Id, Null);
+	if(Marker != Null) {
+		declare K_MarkerConfig Config = G_Pickups[Id].MarkerConfig;
+		Marker.IsTurning = Config.IsTurning;
+		Marker.ShowArmor = Config.ShowArmor;
+		Marker.Label = Config.Label;
+		Marker.Box = Config.Box;
+		Marker.Icon = Config.Icon;
+		Marker.Color = Config.Color;
+		Marker.ImageUrl = Config.ImageUrl;
+		Marker.ManialinkFrameId = Config.ManialinkFrameId;
+		Marker.DistMin = Config.DistMin;
+		Marker.DistMax = Config.DistMax;
+		Marker.MiniMapVisibility = Config.MiniMapVisibility;
+		Marker.HudVisibility = Config.HudVisibility;
+		Marker.HideOnSelf = Config.HideOnSelf;
+		Marker.Gauge = Config.Gauge;
+	}
 }
 
 /**
  * FOR INTERNAL USE ONLY.
  * Returns the position of a Nod, if possible.
- * Else returns (0, 0, 0).
+ * Else returns <-1., -1., -1.>.
  */
 Vec3 Private_GetPosition(CNod Nod) {
 	switchtype(Nod) {
@@ -64,7 +93,29 @@ Vec3 Private_GetPosition(CNod Nod) {
 		case CModeVehicle: return (Nod as CModeVehicle).Position;
 		case CMapLandmark: return (Nod as CMapLandmark).Position;
 	}
-	return <0., 0., 0.>;
+	return C_Position_Invalid;
+}
+
+/**
+ * Returns a default marker config corresponding to CUIConfig::AddMarker.
+ */
+K_MarkerConfig DefaultMarkerConfig() {
+	return K_MarkerConfig {
+		IsTurning = False,
+		ShowArmor = False,
+		Label = "",
+		Box = <-1., -1., -1.>,
+		Icon = "",
+		Color = <-1., -1., -1.>,
+		ImageUrl = "",
+		ManialinkFrameId = "",
+		DistMin = -1.,
+		DistMax = -1.,
+		MiniMapVisibility = CUIConfigMarker::EMiniMapVisibility::Never,
+		HudVisibility = CUIConfigMarker::EHudVisibility::Never,
+		HideOnSelf = False,
+		Gauge = -1.
+	};
 }
 
 /**
@@ -80,8 +131,12 @@ Boolean Exists(Text Id) {
  */
 Void Create(Text Id) {
 	assert(TL::Trim(Id) != "", "Id can't be blank"); // Because this can be annoying for debugging
-	assert(!Exists(Id), """Pickup with Id "{{{Id}}}" already exists""");
-	G_Pickups[Id] = K_VirtualPickup{Id = Id};
+	assert(!G_Pickups.existskey(Id), """No pickup with Id "{{{Id}}}" found""");
+	G_Pickups[Id] = K_VirtualPickup{
+		Id = Id,
+		Position = C_Position_Invalid,
+		MarkerConfig = DefaultMarkerConfig()
+	};
 }
 
 /**
@@ -90,7 +145,7 @@ Void Create(Text Id) {
  * Throws an error if there is no entry with the given Id.
  */
 K_VirtualPickup Get(Text Id) {
-	assert(Exists(Id), """No pickup with Id "{{{Id}}}" found""");
+	assert(G_Pickups.existskey(Id), """No pickup with Id "{{{Id}}}" found""");
 	return G_Pickups[Id];
 }
 
@@ -118,9 +173,8 @@ K_VirtualPickup[] GetByHolder(CNod Holder) {
  * Removes the given Pickup and destroys it's marker.
  */
 Void Destroy(Text Id) {
-	assert(Exists(Id), """No pickup with Id "{{{Id}}}" found""");
-
-	if(G_Pickups[Id].Marker != Null) Private_RemoveMarkers(G_Pickups[Id].Marker);
+	assert(G_Pickups.existskey(Id), """No pickup with Id "{{{Id}}}" found""");
+	Private_RemoveMarker(Id);
 	G_Pickups.removekey(Id);
 }
 
@@ -129,7 +183,7 @@ Void Destroy(Text Id) {
  */
 Void DestroyAll() {
 	foreach (Id => Pickup in G_Pickups) {
-		if(G_Pickups[Id].Marker != Null) Private_RemoveMarkers(G_Pickups[Id].Marker);
+			Private_RemoveMarker(Id);
 	}
 	G_Pickups.clear();
 }
@@ -139,7 +193,7 @@ Void DestroyAll() {
  * Throws an error if there is no entry with the given Id.
  */
  Void UpdatePosition(Text Id) {
-	assert(Exists(Id), """No pickup with Id "{{{Id}}}" found""");
+	assert(G_Pickups.existskey(Id), """No pickup with Id "{{{Id}}}" found""");
 	if(G_Pickups[Id].Holder != Null) {
 		G_Pickups[Id].Position = Private_GetPosition(G_Pickups[Id].Holder);
 	}
@@ -151,34 +205,32 @@ Void DestroyAll() {
  * Throws an error if there is no entry with the given Id.
  */
 Void SetPosition(Text Id, Vec3 Position) {
-	assert(Exists(Id), """No pickup with Id "{{{Id}}}" found""");
+	assert(G_Pickups.existskey(Id), """No pickup with Id "{{{Id}}}" found""");
 
 	G_Pickups[Id].Position = Position;
 	G_Pickups[Id].Holder = Null;
 
-	declare CUIConfigMarker NewMarker = UIManager.UIAll.AddMarker(Position);
-	declare CUIConfigMarker OldMarker = G_Pickups[Id].Marker;
-	if (OldMarker != Null) {
-		Private_ApplyMarkerConfig(OldMarker, NewMarker);
-		Private_RemoveMarkers(OldMarker); // REMOVE WHEN NOT NEEDED ANYMORE, ELSE REFERENCE ERROR
-	}
-	G_Pickups[Id].Marker = NewMarker;
+	// Recreate Marker
+	Private_RemoveMarker(Id);
+	G_Markers[Id] = UIManager.UIAll.AddMarker(Position);
+	Private_ApplyMarkerConfig(Id);
 }
 
 /**
  * Sets the Holder of the pickup with the given Id.
- * Also set the Position to the current position of the holder or (0, 0, 0) if unknown.
+ * Also set the Position to the current position of the holder or <-1., -1., -1.> if unknown.
  * Throws an error if there is no entry with the given Id.
  */
 Void SetHolder(Text Id, CNod Holder) {
-	assert(Exists(Id), """No pickup with Id "{{{Id}}}" found""");
+	assert(G_Pickups.existskey(Id), """No pickup with Id "{{{Id}}}" found""");
+	
+	if(Holder == G_Pickups[Id].Holder) return;
 
 	// Update Holder
 	G_Pickups[Id].Holder = Holder;
 	UpdatePosition(Id);
 
-	// Update Marker
-	declare CUIConfigMarker OldMarker = G_Pickups[Id].Marker;
+	// Recreate Marker
 	declare CUIConfigMarker NewMarker;
 	switchtype(Holder) {
 		case CSmPlayer: NewMarker = UIManager.UIAll.AddMarker(Holder as CSmPlayer);
@@ -186,14 +238,19 @@ Void SetHolder(Text Id, CNod Holder) {
 		case CMapLandmark: NewMarker = UIManager.UIAll.AddMarker(Holder as CMapLandmark);
 	}
 	
-	if (OldMarker != Null && NewMarker != Null) {
-		Private_ApplyMarkerConfig(OldMarker, NewMarker);
-	}
-	if (OldMarker != Null) {
-		Private_RemoveMarkers(OldMarker);	// REMOVE WHEN NOT NEEDED ANYMORE, ELSE REFERENCE ERROR
-	}
+	Private_RemoveMarker(Id);
 	if (NewMarker != Null) {
-		G_Pickups[Id].Marker = NewMarker;
+		G_Markers[Id] = NewMarker;
+		Private_ApplyMarkerConfig(Id);
 	}
+}
 
+/**
+ * Sets and applies a marker config for the pickup with the given id.
+ * Throws an error if there is no entry with the given Id.
+ */
+Void SetMarkerConfig(Text Id, K_MarkerConfig Config) {
+	assert(G_Pickups.existskey(Id), """No pickup with Id "{{{Id}}}" found""");
+	G_Pickups[Id].MarkerConfig = Config;
+	Private_ApplyMarkerConfig(Id);
 }

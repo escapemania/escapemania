@@ -57,10 +57,11 @@ foreach (Landmark in MapLandmarks) {
 declare Text PickupId = "MyPickup";
 VirtualPickups::Create(PickupId);
 VirtualPickups::SetHolder(PickupId, InitialPickupHolder);
-declare CUIConfigMarker PickupMarker = VirtualPickups::Get(PickupId).Marker;
-PickupMarker.HudVisibility = CUIConfigMarker::EHudVisibility::Always;
-PickupMarker.Label = "SomePickup";
-PickupMarker.Color = <0., 0.5, 1.>;
+declare VirtualPickups::K_MarkerConfig MarkerConfig = VirtualPickups::DefaultMarkerConfig();
+MarkerConfig.HudVisibility = CUIConfigMarker::EHudVisibility::Always;
+MarkerConfig.Label = "SomePickup";
+MarkerConfig.Color = <0., 0.5, 1.>;
+VirtualPickups::SetMarkerConfig(PickupId, MarkerConfig);
 ***
 
 ***Match_PlayLoop***
