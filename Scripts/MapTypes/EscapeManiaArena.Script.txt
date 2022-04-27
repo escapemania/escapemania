@@ -1,0 +1,346 @@
+/**
+ * Escape Mania
+ * - At least one finish with tag "Goal"
+ * - Exactly one start with tag "Spawn"
+ * - Any amount of checkpoint with tag "Checkpoint"
+ * - Any amount of other landmarks with other tag (used by script)
+ */
+
+#RequireContext CSmMapType
+
+#Const Version "2022-04-23"
+#Const C_MapTypeVersion 1
+#Const ScriptName "MapTypes/EscapeManiaArena.Script.txt"
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+// Libraries
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+#Include "TextLib" as TL
+#Include "ColorLib" as CL
+
+#Include "Libs/Nadeo/TMNext/TrackMania/ColorPalette.Script.txt"						as ColorPalette
+#Include "Libs/Nadeo/ModeLibs/Legacy/MapType.Script.txt"									as MapType
+#Include "Libs/Nadeo/CommonLibs/Common/ReportContext.Script.txt"					as ReportContext
+#Include "Libs/Nadeo/TMNext/TrackMania/Editor/MapType.Script.txt"					as TMMapType
+#Include "Modes/TrackMania/TM_RaceTest_Local.Script.txt"									as RaceTest
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+// Constants
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+#Const C_AnchorTag_Start								"Spawn"
+#Const C_AnchorTag_StartFinish					"StartFinish"
+#Const C_AnchorTag_Finish								"Goal"
+#Const C_AnchorTag_Checkpoint						"Checkpoint"
+
+#Const C_UI_BackgroundOpacity						0.75
+#Const C_UI_ButtonOpacity								0.75
+#Const C_UI_Dbg_ButtonActivatorOpacity	0.0
+#Const C_UI_Dbg_ButtonActivatorColor		"F00"
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+// Functions
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+
+/// Checks if the given Anchor is a normal multilap anchor (Not used for special script handling)
+Boolean IsMultilap (CAnchorData Anchor) {
+	return Anchor.WaypointType == CAnchorData::EWaypointType::StartFinish && Anchor.Tag == C_AnchorTag_StartFinish;
+}
+
+/// Checks if the given Anchor is a normal start anchor (Not used for special script handling)
+Boolean IsStart (CAnchorData Anchor) {
+	declare Boolean IsStart = Anchor.WaypointType == CAnchorData::EWaypointType::Start && Anchor.Tag == C_AnchorTag_Start;
+	return IsStart || IsMultilap(Anchor);
+}
+
+/// Checks if the given Anchor is a normal finish anchor (Not used for special script handling)
+Boolean IsFinish (CAnchorData Anchor) {
+	declare Boolean IsFinish = Anchor.WaypointType == CAnchorData::EWaypointType::Finish && Anchor.Tag == C_AnchorTag_Finish;
+	return IsFinish || IsMultilap(Anchor);
+}
+
+/// Checks if the map is valid
+Void UpdateValidability() {
+	declare Boolean IsValid = True;
+	
+	declare Integer StartCount = 0;
+	declare Integer FinishCount = 0;
+	declare Text[] ValidationErrors = [];
+	
+	foreach (Anchor in AnchorData) {
+		if (IsStart(Anchor)) StartCount += 1;
+		if (IsFinish(Anchor)) FinishCount += 1;
+	}
+	
+	if (StartCount != 1) {
+		IsValid = False;
+		ValidationErrors.add("""- You need to place exactly one "{{{C_AnchorTag_Start}}}" or "{{{C_AnchorTag_StartFinish}}}" block. (Found: {{{StartCount}}})""");
+	}
+	
+	if (FinishCount < 1) {
+		IsValid = False;
+		ValidationErrors.add("""- You need to place at least one "{{{C_AnchorTag_Finish}}}" block""");
+	}
+	
+	if (IsValid) {
+		ValidationStatus = CMapType::ValidationStatus::Validated;
+		ValidabilityRequirementsMessage = "Map is valid";
+	} else {
+		ValidationStatus = CMapType::ValidationStatus::NotValidable;
+		ValidabilityRequirementsMessage = "Map is invalid:\n" ^ TL::Join("\n", ValidationErrors);
+	}
+}
+
+/// Returns the anchor editing UI as Text
+Text GetEditAnchorManialink() {
+	declare Color_HeaderPanelBackground = ColorPalette::C_Color_GreenTwo;
+	declare Color_BodyPanelBackground = ColorPalette::C_Color_GreenThree;
+
+	return """
+<manialink version="3" name="FlagRushArena_AnchorEdit">
+	<frame id="anchor-wrapper" pos="127.5 50" hidden="1">
+		<frame id="header">
+			<quad pos="0 0" z-index="0" size="60 10" style="UICommon64_1" substyle="BgFrame1"  colorize="{{{Color_HeaderPanelBackground}}}" halign="center" valign="center" opacity="{{{C_UI_BackgroundOpacity}}}"/>
+			<label pos="0 0" z-index="1" size="55 8" text="Landmark" halign="center" valign="center" textsize="4" style="Default" textfont="GameFontSemiBold" id="label-header"/>
+		</frame>
+		
+		<frame id="body" pos="0 -10">
+			<quad pos="0 -10" z-index="0" size="60 25" halign="center" valign="center" colorize="{{{Color_BodyPanelBackground}}}" style="UICommon64_1" substyle="BgFrame1" opacity="{{{C_UI_BackgroundOpacity}}}"/>
+
+			<frame id="tag-wrapper" z-index="1">
+				<label pos="0 -5" size="45 8" text="Tag:" halign="center" valign="center" style="Default" textfont="GameFontRegular" textsize="3" z-index="1" textcolor="FFF"/>
+				<entry pos="-5 -15" size="40 8" id="landmark-tag-entry" halign="center" valign="center" textfont="GameFontRegular" textcolor="fff"/>
+				<quad pos="22.5 -15" size="8 8" id="landmark-tag-reset" halign="center" valign="center" style="UICommon64_1" substyle="Reload_light" scriptevents="1"/>
+			</frame>
+		</frame>
+
+		<frame id="order" pos="-40 -15">
+				<quad pos="0 0" z-index="0" size="15 15" halign="center" valign="center" colorize="{{{Color_BodyPanelBackground}}}" style="UICommon64_1" substyle="BgFrame1" opacity="{{{C_UI_BackgroundOpacity}}}"/>
+				<label pos="0 3.5" z-index="1" size="10 5" text="Order" halign="center" valign="center" style="Default" textfont="GameFontRegular" textsize="2" textcolor="FFF"/>
+				<label pos="0 -1.5" z-index="1" size="10 8" text="0" halign="center" valign="center" style="Default" textfont="GameFontBlack" textsize="5" textcolor="FFF" id="label-ordervalue"/>
+			
+				<quad pos="0 10" z-index="0" size="8 5" bgcolor="FFF" opacity="0.7" style="UICommon64_2" substyle="ArrowUpSlim_light" valign="center" halign="center" scriptevents="1" id="button-order-up"/>
+				<quad pos="0 -10" z-index="0" size="8 5" bgcolor="FFF" opacity="0.7" style="UICommon64_2" substyle="ArrowDownSlim_light" valign="center" halign="center" scriptevents="1" id="button-order-down"/>
+		</frame>
+	</frame>
+
+	<script><!--
+	#Include "TextLib" as TL		
+
+	#Struct K_Anchor {
+		Ident Id;
+		Text Type;
+		Text Tag;
+		Integer Order;
+	}
+
+	declare CMlFrame AnchorEditFrame;
+	declare CMlLabel AnchorTypeLabel;
+	declare CMlEntry AnchorTagEntry;
+	declare CMlQuad AnchorTagReset;
+
+	declare CMlQuad AnchorOrderUp;
+	declare CMlQuad AnchorOrderDown;
+	declare CMlLabel AnchorOrderLabel;
+		
+	declare K_Anchor CurrentAnchor;
+
+	Void InitMlControls() {
+		AnchorEditFrame = (Page.GetFirstChild("anchor-wrapper") as CMlFrame);
+		AnchorTypeLabel = (Page.GetFirstChild("label-header") as CMlLabel);
+		AnchorTagEntry = (Page.GetFirstChild("landmark-tag-entry") as CMlEntry);
+		AnchorTagReset = (Page.GetFirstChild("landmark-tag-reset") as CMlQuad);
+
+		AnchorOrderUp = (Page.GetFirstChild("button-order-up") as CMlQuad);
+		AnchorOrderDown = (Page.GetFirstChild("button-order-down") as CMlQuad);
+		AnchorOrderLabel = (Page.GetFirstChild("label-ordervalue") as CMlLabel);
+	}
+
+	Void UpdateCurrentAnchor() {
+		declare Ident EscapeMania_CurrentAnchorId for Page;
+
+		if(EscapeMania_CurrentAnchorId != CurrentAnchor.Id) {
+			declare Text EscapeMania_CurrentAnchorType for Page;
+			declare Text EscapeMania_CurrentAnchorTag for Page;
+			declare Integer EscapeMania_CurrentAnchorOrder for Page;
+
+			CurrentAnchor.Id = EscapeMania_CurrentAnchorId;
+			CurrentAnchor.Type = EscapeMania_CurrentAnchorType;
+			CurrentAnchor.Tag = EscapeMania_CurrentAnchorTag;
+			CurrentAnchor.Order = EscapeMania_CurrentAnchorOrder;
+		}
+	}
+
+	Void SendUpdatedAnchor() {
+		declare Ident EscapeMania_CurrentAnchorId for Page;
+		declare Text EscapeMania_CurrentAnchorType for Page;
+		declare Text EscapeMania_CurrentAnchorTag for Page;
+		declare Integer EscapeMania_CurrentAnchorOrder for Page;
+
+		EscapeMania_CurrentAnchorId = CurrentAnchor.Id;
+		EscapeMania_CurrentAnchorTag = CurrentAnchor.Tag;
+		EscapeMania_CurrentAnchorOrder = CurrentAnchor.Order;
+	}
+
+	Void UpdateUI() {
+		AnchorTypeLabel.Value = CurrentAnchor.Type;
+		AnchorTagEntry.Value = CurrentAnchor.Tag;
+		AnchorOrderLabel.Value = TL::ToText(CurrentAnchor.Order);
+	}
+
+	Void HandleEvents() {
+		foreach (Event in PendingEvents) {
+			switch (Event.Type) {
+				case CMlScriptEvent::Type::MouseClick: {
+					switch (Event.Control) {
+						case AnchorOrderUp: {
+							CurrentAnchor.Order += 1;
+						}
+						case AnchorOrderDown: {
+							CurrentAnchor.Order -= 1;
+						}
+						case AnchorTagReset: {
+							CurrentAnchor.Tag = CurrentAnchor.Type;
+						}
+					}
+				}
+				case CMlScriptEvent::Type::EntrySubmit: {
+					if(Event.Control == AnchorTagEntry) {
+						CurrentAnchor.Tag = AnchorTagEntry.Value;
+					}
+				}
+			}
+		}
+	}
+		
+	main() {
+		declare Ident EscapeMania_CurrentAnchorId for Page;
+		InitMlControls();
+			
+		while (True) {
+			yield;
+
+			// Hide if no anchor selected
+			if (EscapeMania_CurrentAnchorId == NullId) {
+				AnchorEditFrame.Hide();
+				continue;
+			}
+			AnchorEditFrame.Show();
+
+			UpdateCurrentAnchor();
+			HandleEvents();
+			UpdateUI();
+			SendUpdatedAnchor();
+		}
+	}
+	--></script>
+
+</manialink>
+	""";
+}
+
+Text GetAnchorTypeText(CAnchorData Anchor) {
+	switch (Anchor.WaypointType) {
+		case CAnchorData::EWaypointType::Start: {
+			return C_AnchorTag_Start;
+		}
+		case CAnchorData::EWaypointType::Checkpoint: {
+			return C_AnchorTag_Checkpoint;
+		}
+		case CAnchorData::EWaypointType::Finish: {
+			return C_AnchorTag_Finish;
+		}
+		case CAnchorData::EWaypointType::StartFinish: {
+			return C_AnchorTag_StartFinish;
+		}
+	}
+	return "";
+}
+
+/// Sets the given Anchor as content of the Anchor editing UI
+Void SetEditedAnchor(Ident AnchorId) {
+	declare Ident EscapeMania_CurrentAnchorId for ManialinkPage;
+	declare Text EscapeMania_CurrentAnchorType for ManialinkPage;
+	declare Text EscapeMania_CurrentAnchorTag for ManialinkPage;
+	declare Integer EscapeMania_CurrentAnchorOrder for ManialinkPage;
+
+	if (AnchorId == NullId) {
+		EscapeMania_CurrentAnchorId = NullId;
+		EscapeMania_CurrentAnchorType = "";
+		EscapeMania_CurrentAnchorTag = "";
+		EscapeMania_CurrentAnchorOrder = 0;
+		return;
+	}
+
+	foreach (Anchor in AnchorData) {
+		if (Anchor.Id == AnchorId) {
+			EscapeMania_CurrentAnchorId = Anchor.Id;
+			EscapeMania_CurrentAnchorType = GetAnchorTypeText(Anchor);
+			EscapeMania_CurrentAnchorTag = Anchor.Tag;
+			EscapeMania_CurrentAnchorOrder = Anchor.Order;
+			return;
+		}
+	}
+}
+
+Void UpdateEditedAnchor() {
+	declare Ident EscapeMania_CurrentAnchorId for ManialinkPage;
+
+	foreach (Anchor in AnchorData) {
+		if (Anchor.Id == EscapeMania_CurrentAnchorId) {
+			declare Text EscapeMania_CurrentAnchorTag for ManialinkPage;
+			declare Integer EscapeMania_CurrentAnchorOrder for ManialinkPage;
+			Anchor.Tag = EscapeMania_CurrentAnchorTag;
+			Anchor.Order = EscapeMania_CurrentAnchorOrder;
+			return;
+		}
+	}
+}
+
+Void PlayTestRun() {
+	TMMapType::PlayTestRun_Yield();
+	ReportContext::SetContext(System, ReportContext::C_Context_MapEditor);
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+// Main
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+
+main() {
+	HoldLoadingScreen = True;
+	ReportContext::SetContext(System, ReportContext::C_Context_MapEditor);
+	TMMapType::ApplyDecoImages();
+	
+	MapType::SetVersion(C_MapTypeVersion);
+	UpdateValidability();
+	EnableMapTypeStartTest = True; // The maptype will handle the 'StartTest' event
+	CustomEditAnchorData = True; // Custom interface for editing waypoint data (block properties)
+	ManialinkText = GetEditAnchorManialink();
+	
+	HoldLoadingScreen = False;
+	
+	while (True) {
+		yield;
+		
+		// Hide config windows when not in block property mode
+		if (PlaceMode != CMapEditorPlugin::PlaceMode::BlockProperty) {
+				SetEditedAnchor(NullId);
+		}
+		
+		// Check Events
+		foreach(Event in PendingEvents) {
+			switch(Event.Type) {
+				case CMapEditorPluginEvent::Type::MapModified: {
+					UpdateValidability();
+				}
+				case CMapEditorPluginEvent::Type::EditAnchor: {
+					SetEditedAnchor(Event.EditedAnchorDataId);
+				}
+				case CMapEditorPluginEvent::Type::StartTest: {
+					PlayTestRun();
+				}
+			}
+		}
+
+		UpdateEditedAnchor();
+	}
+}
