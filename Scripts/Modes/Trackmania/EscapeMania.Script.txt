@@ -5,24 +5,15 @@
 #Include "TextLib" as TL
 #Include "MathLib" as ML
 
-#Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/VirtualPickups.Script.txt" as VirtualPickups
-
 #Const	CompatibleMapTypes						"Trackmania\\TM_Race,TM_Race,Trackmania\\EscapeManiaArena,EscapeManiaArena"
 #Const	Version												"0.0.1"
 #Const	ScriptName										"Modes/Trackmania/EscapeMania.Script.txt"
 
-#Const	C_LayerName_Markers	"Layer_Markers"
-
 declare CSmMapLandmark[] G_SpawnLandmarks;
-declare Ident G_CharacterPilotItemIdent;
 
 ***Match_StartServer***
 ***
 Race::UseCppRaceProgression(False);
-
-ItemList_Begin();
-G_CharacterPilotItemIdent = ItemList_Add("CharacterPilot");
-ItemList_End();
 ***
 
 ***Match_StartMap***
@@ -34,34 +25,6 @@ foreach (Landmark in MapLandmarks) {
 	}
 }
 assert(G_SpawnLandmarks.count > 0);
-
-Layers::Create(C_LayerName_Markers, GetMarkerML());
-Layers::SetType(C_LayerName_Markers, CUILayer::EUILayerType::Markers);
-Layers::Attach(C_LayerName_Markers);
-
-declare HelloMarker = UIManager.UIAll.AddMarker(G_SpawnLandmarks[0]);
-HelloMarker.ManialinkFrameId = "hello-marker-frame";
-HelloMarker.HudVisibility = CUIConfigMarker::EHudVisibility::WhenVisible;
-HelloMarker.Label = "Hello Marker";
-HelloMarker.Box = <1., 2., 1.>;
-HelloMarker.Color = <1., 0.5, 0.>;
-
-declare CMapLandmark InitialPickupHolder;
-foreach (Landmark in MapLandmarks) {
-	if(Landmark.Tag == "Pickup") {
-		InitialPickupHolder = Landmark;
-		break;
-	}
-}
-
-declare Text PickupId = "MyPickup";
-VirtualPickups::Create(PickupId);
-VirtualPickups::SetHolder(PickupId, InitialPickupHolder);
-declare VirtualPickups::K_MarkerConfig MarkerConfig = VirtualPickups::DefaultMarkerConfig();
-MarkerConfig.HudVisibility = CUIConfigMarker::EHudVisibility::Always;
-MarkerConfig.Label = "SomePickup";
-MarkerConfig.Color = <0., 0.5, 1.>;
-VirtualPickups::SetMarkerConfig(PickupId, MarkerConfig);
 ***
 
 ***Match_PlayLoop***
@@ -71,66 +34,6 @@ foreach (Player in Players) {
 		SpawnPlayer (Player, Player.CurrentClan, 100, G_SpawnLandmarks[0].PlayerSpawn, Now);
 	}
 }
-
-foreach (Event in PendingEvents) {
-	log(Event.Type);
-	switch (Event.Type) {
-		case CSmModeEvent::EType::OnPlayerTriggersWaypoint: {
-			log(Event.Player.Position);
-			switch (Event.Landmark.Tag) {
-				case "DeathTrigger": {
-					RespawnPlayer(Event.Player, G_SpawnLandmarks[0].PlayerSpawn);
-				}
-				case "FPS": {
-					Event.Player.ForceModelId = G_CharacterPilotItemIdent;
-					UnspawnPlayer(Event.Player);
-				}
-				case "Teleport": {
-					declare CMapSpawn Target;
-					foreach (Landmark in MapLandmarks) {
-						if (Landmark.PlayerSpawn != Null && Landmark.Tag == "TeleportTarget") {
-							Target = Landmark.PlayerSpawn;
-						}
-					}
-					if (Target != Null) RespawnPlayer(Event.Player, Target);
-				}
-				case "Gravity": {
-					SetPlayer_Delayed_GravityCoef(Event.Player, 0.25);
-				}
-				case "MTClip": {
-					UIManager.UIAll.UISequence_CustomMTClip = "ScriptClip";
-					UIManager.UIAll.UISequence = CUIConfig::EUISequence::CustomMTClip;
-				}
-				case "Pickup": {
-					declare VirtualPickups::K_VirtualPickup[] PlayerPickups = VirtualPickups::GetByHolder(Event.Player);
-					declare VirtualPickups::K_VirtualPickup[] LandmarkPickups = VirtualPickups::GetByHolder(Event.Landmark);
-					if (PlayerPickups.count > 0) {
-						declare VirtualPickups::K_VirtualPickup PickupToDrop = PlayerPickups[0];
-						VirtualPickups::SetHolder(PickupToDrop.Id, Event.Landmark);
-					} else if (LandmarkPickups.count > 0) {
-						declare VirtualPickups::K_VirtualPickup PickupToPickUp = LandmarkPickups[0];
-						VirtualPickups::SetHolder(PickupToPickUp.Id, Event.Player);
-					}
-				}
-			}
-		}
-		case CSmModeEvent::EType::OnPlayerRequestRespawn: {
-			Event.Player.ForceModelId = NullId;
-			UIManager.UIAll.UISequence = CUIConfig::EUISequence::Playing;
-			UnspawnPlayer(Event.Player);
-		}
-	}
-}
 ***
 
-Text GetMarkerML() {
-	return """
-	<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
-	<manialink version="3" name="Markers">
-		<frame id="hello-marker-frame">
-		<quad size="10 10" bgcolor="f90" pos="-10" image="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Gull_portrait_ca_usa.jpg/300px-Gull_portrait_ca_usa.jpg"/>
-			<label size="20 10" text="Hello Marker"/>
-		</frame>
-	</manialink>
-	""";
-}
+Void DoNothing() {}
