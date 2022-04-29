@@ -1,0 +1,379 @@
+/**
+ * Inventory Manialink that supports displaying and dropping VirtualPickups.
+ */
+
+// #RequireContext CSmMode
+
+#Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/VirtualPickups.Script.txt" as VirtualPickups
+
+#Const C_WindowOpacity 0.7
+
+#Const C_ControlId_ItemSlotPrefix "slot-"
+#Const C_ControlId_ItemDrop "drop"
+#Const C_ControlId_ItemInfo "info"
+
+#Const C_Event_ItemDrop "Inventory_DropItem"
+
+#Const C_PickupCustomDataKey_Name "Name"
+#Const C_PickupCustomDataKey_Description "Description"
+#Const C_PickupCustomDataKey_ImageStyle "ImageStyle"
+#Const C_PickupCustomDataKey_ImageSubstyle "ImageSubstyle"
+#Const C_PickupCustomDataKey_ImageUrl "ImageUrl"
+
+// THESE 2 STRUCTS NEED TO BE THE SAME AS IN THE MANIALINK SCRIPT
+// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+#Struct K_Net_CustomData {
+	Text[Text] TextData;
+	Boolean[Text] BooleanData;
+	Integer[Text] IntegerData;
+	Real[Text] RealData;
+	Int2[Text] Int2Data;
+	Int3[Text] Int3Data;
+	Vec2[Text] Vec2Data;
+	Vec3[Text] Vec3Data;
+	// CNod[Text] NodData; // Can't be send via netwrite
+}
+
+#Struct K_Net_VirtualPickup {
+	Text Id;
+	// CNod Holder; // Can't be send via netwrite
+	Vec3 Position;
+	// K_MarkerConfig MarkerConfig; // Unnecessary
+	K_Net_CustomData CustomData;
+}
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/**
+ * FOR INTERNAL USE ONLY.
+ * Reduces VirtualPickups to a subset of members that can be sent to the clients.
+ * Objects, i.e. CNods can not be sent.
+ */
+K_Net_VirtualPickup[] Private_ConvertVirtualPickupsToNetData(VirtualPickups::K_VirtualPickup[] Pickups) {
+	declare K_Net_VirtualPickup[] Data;
+	foreach (Id => Pickup in Pickups) {
+		declare K_Net_CustomData CustomData = K_Net_CustomData{
+			TextData = Pickup.CustomData.TextData,
+			BooleanData = Pickup.CustomData.BooleanData,
+			IntegerData = Pickup.CustomData.IntegerData,
+			RealData = Pickup.CustomData.RealData,
+			Int2Data = Pickup.CustomData.Int2Data,
+			Int3Data = Pickup.CustomData.Int3Data,
+			Vec2Data = Pickup.CustomData.Vec2Data,
+			Vec3Data = Pickup.CustomData.Vec3Data
+		};
+		declare K_Net_VirtualPickup NetPickup = K_Net_VirtualPickup{
+			Id = Pickup.Id,
+			Position = Pickup.Position,
+			CustomData = CustomData
+		};
+		Data.add(NetPickup);
+	}
+	return Data;
+}
+
+/**
+ * Updates and sends the inventory data, i.e. the VirtualPickups that a player carries for a specific player.
+ * Should be called every time the holder of a VirtualPickup is changed.
+ */
+Void Net_SendPickupData(CSmPlayer Player) {
+	declare netwrite K_Net_VirtualPickup[] Net_Inventory_Pickups for Player;
+	declare VirtualPickups::K_VirtualPickup[] PlayerPickups = VirtualPickups::GetByHolder(Player);
+	Net_Inventory_Pickups = Private_ConvertVirtualPickupsToNetData(PlayerPickups);
+}
+
+/**
+ * Updates and sends the inventory data, i.e. the VirtualPickups that a player carries for every player.
+ * Should be called every time the holder of a VirtualPickup is changed.
+ */
+Void Net_SendPickupData() {
+	foreach (Player in Players) Net_SendPickupData(Player);
+}
+
+/**
+ * Returns the manialink for the inventory.
+ * TODO: Might make this more customizable in the future, i.e. register actions by the gamemode, amount of rows, amount of columns, pagination, ...
+ */
+Text GetManialink() {
+	return """
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<manialink version="3" name="VirtualPickups_Inventory">
+	<framemodel id="itemslot">
+		<quad z-index="-1" size="25 15" bgcolor="000" opacity="{{{ C_WindowOpacity }}}" valign="center" halign="center" id="background"/>
+		<frame id="content">
+			<quad pos="-5" z-index="0" size="15 15" bgcolor="FFF" opacity="1" halign="center" valign="center" id="icon"/>
+			<quad pos="7.5 7.5" z-index="0" size="7.5 7.5" bgcolor="FFF" opacity="1" id="{{{ C_ControlId_ItemInfo }}}" halign="center" style="UICommon64_1" substyle="Info_light" valign="top" scriptevents="1" data-show-tooltip="True"/>
+			<quad pos="7.5 -7.5" z-index="0" size="7.5 7.5" bgcolor="FFF" opacity="1" id="{{{ C_ControlId_ItemDrop }}}" halign="center" style="UICommon64_1" substyle="Paste_light" valign="bottom" scriptevents="1"/>
+		</frame>
+	</framemodel>
+
+	<frame id="tooltip" z-index="2" hidden="1">
+		<frame id="title">
+			<quad  z-index="0" size="40 10" opacity="{{{ C_WindowOpacity }}}" halign="left" valign="top" bgcolor="000" pos="0 0"/>
+			<label  z-index="1" size="38 8" text="Item name" halign="center" textfont="GameFontBlack" textsize="3" valign="center2" pos="20 -5" id="title-label"/>
+		</frame>
+		<quad pos="0 -10" z-index="0" size="40 1" bgcolor="FFF" id="divider" halign="left" valign="top"/>
+		<frame id="description">
+			<quad  z-index="0" size="40 10" opacity="{{{ C_WindowOpacity }}}" halign="left" valign="top" bgcolor="000" pos="0 -11" id="description-background"/>
+			<label pos="1 -13" z-index="1" size="38 8" text="Some item description" halign="left" valign="top" style="GameFontRegular" autonewline="1" textsize="2" id="description-label"/>
+		</frame>
+	</frame>
+
+	<frame id="inventory" z-index="1">
+		<quad  z-index="-1" size="110 50" opacity="{{{ C_WindowOpacity }}}" halign="center" valign="center" bgcolor="000" id="background"/>
+
+		<frame id="header" pos="0 18.5">
+			<label  z-index="0" size="50 10" text="Inventory" halign="left" textfont="GameFontBlack" pos="-53" textsize="5" id="label" valign="center2"/>
+			<quad  z-index="0" size="10 10" bgcolor="FFF" halign="right" pos="53" valign="center" style="UICommon64_2" substyle="CloseWindow_light" scriptevents="1" id="close"/>
+			<quad  z-index="0" size="110 1" bgcolor="FFF" opacity="1" halign="center" valign="center" pos="0 -6"/>
+		</frame>
+
+		<frame id="slots" pos="0 2">
+			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-0" pos="-40.5"/>
+			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-1" pos="-13.5"/>
+			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-2" pos="13.5"/>
+			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-3" pos="40.5"/>
+			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-4" pos="-40.5 -17"/>
+			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-5" pos="-13.5 -17"/>
+			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-6" pos="13.5 -17"/>
+			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-7" pos="40.5 -17"/>
+		</frame>
+	</frame>
+
+	<frame id="toggle-inventory-wrapper" pos="150 -80" z-index="0">
+		<quad  z-index="-1" size="10 10" bgcolor="000" opacity="{{{ C_WindowOpacity }}}" id="background" halign="center" valign="center"/>
+		<quad  size="10 10" bgcolor="FFF" opacity="1" substyle="DisplayIcons_light" style="UICommon64_2" id="toggle-inventory" halign="center" valign="center" pos="0" scriptevents="1"/>
+	</frame>
+
+	<script><!--
+	#Include "TextLib" as TL
+
+	#Const C_IventoryAnimDuration 500
+
+	#Const C_DataAttributeKey_PickupId "pickup-id"
+	#Const C_DataAttributeKey_TooltipName "tooltip-name"
+	#Const C_DataAttributeKey_TooltipDescription "tooltip-description"
+
+	// THESE 2 STRUCTS NEED TO BE THE SAME AS IN THE MAIN SCRIPT
+	// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+	#Struct K_Net_CustomData {
+		Text[Text] TextData;
+		Boolean[Text] BooleanData;
+		Integer[Text] IntegerData;
+		Real[Text] RealData;
+		Int2[Text] Int2Data;
+		Int3[Text] Int3Data;
+		Vec2[Text] Vec2Data;
+		Vec3[Text] Vec3Data;
+		// CNod[Text] NodData; // Can't be send via netwrite
+	}
+
+	#Struct K_Net_VirtualPickup {
+		Text Id;
+		// CNod Holder; // Can't be send via netwrite
+		Vec3 Position;
+		// K_MarkerConfig MarkerConfig; // Unnecessary
+		K_Net_CustomData CustomData;
+	}
+	// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	#Struct K_ItemSlot {
+		Integer Index;
+		CMlFrame Frame;
+		CMlFrame ContentFrame;
+		CMlQuad Icon;
+		CMlQuad InfoButton;
+		CMlQuad DropButton;
+	}
+
+	#Struct K_Inventory {
+		Boolean State;
+		CMlFrame Frame;
+		CMlQuad ButtonClose;
+		K_ItemSlot[] ItemSlots;
+	}
+
+	#Struct K_Tooltip {
+		CMlFrame Frame;
+		CMlFrame FrameTitle;
+		CMlLabel LabelTitle;
+		CMlQuad Divider;
+		CMlFrame FrameDescription;
+		CMlLabel LabelDescription;
+		CMlQuad BackgroundDescription;
+	}
+
+	declare K_Tooltip Tooltip;
+	declare K_Inventory Inventory;
+	declare CMlFrame InventoryToggleFrame;
+	declare CMlQuad InventoryToggleButton;
+
+	Void InitMlControlReferences() {
+		InventoryToggleFrame = (Page.GetFirstChild("toggle-inventory-wrapper") as CMlFrame);
+		InventoryToggleButton = (InventoryToggleFrame.GetFirstChild("toggle-inventory") as CMlQuad);
+
+		Inventory.Frame = (Page.GetFirstChild("inventory") as CMlFrame);
+		Inventory.ButtonClose = (Inventory.Frame.GetFirstChild("close") as CMlQuad);
+		declare CMlFrame SlotsWrapper = (Inventory.Frame.GetFirstChild("slots") as CMlFrame);
+		for (I, 0, 7) {
+			declare CMlFrame SlotFrame = (SlotsWrapper.GetFirstChild("{{{ C_ControlId_ItemSlotPrefix }}}-" ^ I) as CMlFrame);
+			declare CMlFrame ContentFrame = (SlotFrame.GetFirstChild("content") as CMlFrame);
+			declare CMlQuad SlotIcon = (SlotFrame.GetFirstChild("icon") as CMlQuad);
+			declare CMlQuad SlotInfo = (SlotFrame.GetFirstChild("{{{ C_ControlId_ItemInfo }}}") as CMlQuad);
+			declare CMlQuad SlotDrop = (SlotFrame.GetFirstChild("{{{ C_ControlId_ItemDrop }}}") as CMlQuad);
+			declare K_ItemSlot Slot = K_ItemSlot{
+				Index = I,
+				Frame = SlotFrame,
+				ContentFrame = ContentFrame,
+				Icon = SlotIcon,
+				InfoButton = SlotInfo,
+				DropButton = SlotDrop
+			};
+			Inventory.ItemSlots.add(Slot);
+		}
+
+		Inventory.Frame.RelativePosition_V3 = InventoryToggleFrame.RelativePosition_V3;
+		Inventory.Frame.RelativeScale = 0.;
+
+		declare CMlFrame TooltipFrame = (Page.GetFirstChild("tooltip") as CMlFrame);
+		declare CMlFrame TooltipTitleFrame = (TooltipFrame.GetFirstChild("title") as CMlFrame);
+		declare CMlLabel TooltipTitleLabel = (TooltipTitleFrame.GetFirstChild("title-label") as CMlLabel);
+		declare CMlQuad TooltipDivider = (TooltipFrame.GetFirstChild("divider") as CMlQuad);
+		declare CMlFrame TooltipDescriptionFrame = (TooltipFrame.GetFirstChild("description") as CMlFrame);
+		declare CMlLabel TooltipDescriptionLabel = (TooltipDescriptionFrame.GetFirstChild("description-label") as CMlLabel);
+		declare CMlQuad TooltipDescriptionBackground = (TooltipDescriptionFrame.GetFirstChild("description-background") as CMlQuad);
+		Tooltip = K_Tooltip {
+			Frame = TooltipFrame,
+			FrameTitle = TooltipTitleFrame,
+			LabelTitle = TooltipTitleLabel,
+			Divider = TooltipDivider,
+			FrameDescription = TooltipDescriptionFrame,
+			LabelDescription = TooltipDescriptionLabel,
+			BackgroundDescription = TooltipDescriptionBackground
+		};
+	}
+
+	Void ToggleInventory() {
+		declare Text AnimTargetPos;
+		declare Text AnimTargetScale;
+		if (!Inventory.State) {
+			AnimTargetPos = "0 0";
+			AnimTargetScale = "1";
+		} else {
+			AnimTargetPos = InventoryToggleFrame.RelativePosition_V3.X ^ " " ^ InventoryToggleFrame.RelativePosition_V3.Y;
+			AnimTargetScale = "0";
+		}
+		Inventory.State = !Inventory.State;
+		AnimMgr.Add(Inventory.Frame, "<frame pos='" ^ AnimTargetPos ^ "' scale=" ^ AnimTargetScale ^ "/>", C_IventoryAnimDuration, CAnimManager::EAnimManagerEasing::QuintOut);
+	}
+
+	Void OnCloseInventoryClicked() {
+		if(Inventory.State) ToggleInventory();
+	}
+
+	Void OnDropClicked(CMlControl Control) {
+		if(Control.DataAttributeExists(C_DataAttributeKey_PickupId)) {
+			SendCustomEvent("{{{ C_Event_ItemDrop }}}", [Control.DataAttributeGet(C_DataAttributeKey_PickupId)]);
+		}
+	}
+
+	Void HandleEvents() {
+		foreach (Event in PendingEvents) {
+			switch (Event.Type) {
+				case CMlScriptEvent::Type::MouseClick: {
+					if (Event.Control == InventoryToggleButton) ToggleInventory();
+					else if (Event.Control == Inventory.ButtonClose) OnCloseInventoryClicked();
+					else if (Event.ControlId == "drop") OnDropClicked(Event.Control);
+				}
+			}
+		}
+	}
+
+	Void UpdateItemSlots() {
+		if(GUIPlayer == Null) {
+			foreach (Index => Slot in Inventory.ItemSlots) Slot.ContentFrame.Hide();
+			return;
+		}
+
+		declare netread K_Net_VirtualPickup[] Net_Inventory_Pickups for GUIPlayer;
+		foreach (Index => Slot in Inventory.ItemSlots) {
+			if (!Net_Inventory_Pickups.existskey(Index)){
+				Slot.ContentFrame.Hide();
+				continue;
+			}
+
+			declare K_Net_VirtualPickup Pickup = Net_Inventory_Pickups[Index];
+			Slot.Icon.Style = Pickup.CustomData.TextData.get("{{{ C_PickupCustomDataKey_ImageStyle }}}", "");
+			Slot.Icon.Substyle = Pickup.CustomData.TextData.get("{{{ C_PickupCustomDataKey_ImageSubstyle }}}", "");
+			Slot.Icon.ImageUrl = Pickup.CustomData.TextData.get("{{{ C_PickupCustomDataKey_ImageUrl }}}", "");
+			declare Text PickupName = TL::Trim(Pickup.CustomData.TextData.get("{{{ C_PickupCustomDataKey_Name }}}", ""));
+			declare Text PickupDescription = TL::Trim(Pickup.CustomData.TextData.get("{{{ C_PickupCustomDataKey_Description }}}", ""));
+			if (PickupName == "" && PickupDescription == "") {
+				Slot.InfoButton.Opacity = 0.5;
+				Slot.InfoButton.ScriptEvents_Disable();
+			}
+			else {
+				Slot.InfoButton.Opacity = 1.;
+				Slot.InfoButton.ScriptEvents_Restore();
+			}
+			Slot.InfoButton.DataAttributeSet(C_DataAttributeKey_TooltipName, PickupName);
+			Slot.InfoButton.DataAttributeSet(C_DataAttributeKey_TooltipDescription, PickupDescription);
+			Slot.DropButton.DataAttributeSet(C_DataAttributeKey_PickupId, Pickup.Id);
+			Slot.ContentFrame.Show();
+
+		}
+	}
+
+	Void UpdateTooltip() {
+		if (Page.FocusedControl == Null || Page.FocusedControl.DataAttributeGet("show-tooltip") != "True") {
+			Tooltip.Frame.Hide();
+			return;
+		}
+
+		declare Text Title = Page.FocusedControl.DataAttributeGet(C_DataAttributeKey_TooltipName);
+		declare Text Description = Page.FocusedControl.DataAttributeGet(C_DataAttributeKey_TooltipDescription);
+
+		if (Title == "" && Description == "") {
+			Tooltip.Frame.Hide();
+			return;
+		}
+
+		Tooltip.Frame.Show();
+		Tooltip.Frame.RelativePosition_V3 = <MouseX, MouseY>;
+
+		if (Title == "") {
+			Tooltip.FrameTitle.Hide();
+		} else {
+			Tooltip.FrameTitle.Show();
+			Tooltip.LabelTitle.Value = Title;
+		}
+
+		Tooltip.Divider.Visible = Title != "" && Description != "";
+
+		if (Description == "") {
+			Tooltip.FrameDescription.Hide();
+		} else {
+			Tooltip.FrameDescription.Show();
+			Tooltip.LabelDescription.Value = Description;
+			Tooltip.BackgroundDescription.Size = <40., Tooltip.LabelDescription.ComputeHeight(Description) + 2>;
+			if(Title == "") {
+				Tooltip.FrameDescription.RelativePosition_V3 = <0., 11.>;
+			} else {
+				Tooltip.FrameDescription.RelativePosition_V3 = <0., 0.>;
+			}
+		}
+	}
+
+	main() {
+		InitMlControlReferences();
+
+		while (True) {
+			yield;
+			HandleEvents();
+			UpdateItemSlots();
+			UpdateTooltip();
+		}
+	}
+	--></script>
+</manialink>
+	""";
+}

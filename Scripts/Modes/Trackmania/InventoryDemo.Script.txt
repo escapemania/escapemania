@@ -1,0 +1,124 @@
+// #RequireContext CSmMode
+
+#Extends "Libs/Nadeo/TMNext/TrackMania/Modes/TMNextBase.Script.txt"
+
+#Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/VirtualPickups.Script.txt" as VirtualPickups
+#Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/Inventory.Script.txt" as Inventory
+
+#Include "TextLib" as TL
+#Include "MathLib" as ML
+
+#Const	CompatibleMapTypes						"Trackmania\\TM_Race,TM_Race,Trackmania\\EscapeManiaArena,EscapeManiaArena"
+#Const	Version												"0.0.1"
+#Const	ScriptName										"Modes/Trackmania/InventoryDemo.Script.txt"
+
+#Const C_Layer_Inventory "EscapeMania_Pickups_Inventory"
+
+declare CSmMapLandmark[] G_SpawnLandmarks;
+
+***Match_StartServer***
+***
+Race::UseCppRaceProgression(False);
+
+// Create the UI Layers for the Inventory
+Layers::Create(C_Layer_Inventory, Inventory::GetManialink());
+Layers::SetType(C_Layer_Inventory, CUILayer::EUILayerType::Normal);
+Layers::Attach(C_Layer_Inventory);
+***
+
+***Match_InitMap***
+***
+// Find map spawns, so we're able to spawn
+G_SpawnLandmarks = [];
+foreach (Landmark in MapLandmarks) {
+	if (Landmark.PlayerSpawn != Null) {
+		G_SpawnLandmarks.add(Landmark);
+	}
+}
+assert(G_SpawnLandmarks.count > 0);
+
+// Find some landmark with a waypoint that we can put the pickups on initially
+foreach (Landmark in MapLandmarks) {
+	if (Landmark.Waypoint != Null) {
+		// Create 2 items for testing:
+		declare Text PickupId = "TestPickup"; // Unique(!) Id for Virtual Pickups
+		VirtualPickups::Create(PickupId); // Just registers the Pickup in the lib
+		VirtualPickups::SetHolder(PickupId, Landmark); // Puts the item on the landmark initially. If no SetHolder or SetPosition it defaults to Position VirtualPicksups::C_Position_Invalid
+		// Configure the marker for the pickup. Can put all the values that can also be put in CUIConfigMarker
+		declare VirtualPickups::K_MarkerConfig MarkerConfig = VirtualPickups::DefaultMarkerConfig(); // Get a default marker configuration as CUIConfigMarkers initialize
+		MarkerConfig.HudVisibility = CUIConfigMarker::EHudVisibility::Always; // Marker visibility is "Never" by default. This makes it visible
+		MarkerConfig.Label = "Test Pickup"; // Text for the label
+		MarkerConfig.Color = <0., 0.5, 1.>; // Color for the label
+		VirtualPickups::SetMarkerConfig(PickupId, MarkerConfig); // Set the created Marker configs for the pickup
+		// Set some data that will be used by the inventory.
+		VirtualPickups::SetCustomDataText(PickupId, Inventory::C_PickupCustomDataKey_Name, "Test Pickup");
+		VirtualPickups::SetCustomDataText(PickupId, Inventory::C_PickupCustomDataKey_Description, "This is just some test item. And currently it has a rather long description to force multiple lines.");
+		VirtualPickups::SetCustomDataText(PickupId, Inventory::C_PickupCustomDataKey_ImageStyle, "UICommon64_1"); // Style -> Texture that contains multiple icons
+		VirtualPickups::SetCustomDataText(PickupId, Inventory::C_PickupCustomDataKey_ImageSubstyle, "Debug_light"); // Substyle -> specific icon from style
+		VirtualPickups::SetCustomDataText(PickupId, Inventory::C_PickupCustomDataKey_ImageUrl, "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Gull_portrait_ca_usa.jpg/300px-Gull_portrait_ca_usa.jpg"); // Any file or web url. if provided, style and substyle are ignored
+
+		// Same as above again
+		declare Text BugPickupId = "BugPickup";
+		VirtualPickups::Create(BugPickupId);
+		VirtualPickups::SetHolder(BugPickupId, Landmark);
+		declare VirtualPickups::K_MarkerConfig BugMarkerConfig = VirtualPickups::DefaultMarkerConfig();
+		BugMarkerConfig.HudVisibility = CUIConfigMarker::EHudVisibility::Always;
+		BugMarkerConfig.Label = "Bug";
+		BugMarkerConfig.Color = <1., 0., 1.>;
+		VirtualPickups::SetMarkerConfig(BugPickupId, BugMarkerConfig);
+		VirtualPickups::SetCustomDataText(BugPickupId, Inventory::C_PickupCustomDataKey_Name, "Bug");
+		VirtualPickups::SetCustomDataText(BugPickupId, Inventory::C_PickupCustomDataKey_Description, "Ewww! Get rid of this thing!");
+		VirtualPickups::SetCustomDataText(BugPickupId, Inventory::C_PickupCustomDataKey_ImageStyle, "UICommon64_1");
+		VirtualPickups::SetCustomDataText(BugPickupId, Inventory::C_PickupCustomDataKey_ImageSubstyle, "Debug_light");
+		break;
+	}
+}
+***
+
+***Match_PlayLoop***
+***
+foreach (Event in PendingEvents) {
+	switch (Event.Type) {
+		// Make respawns work
+		case CSmModeEvent::EType::OnPlayerRequestRespawn: {
+			RespawnPlayer(Event.Player, G_SpawnLandmarks[0].PlayerSpawn);
+		}
+		// Pickups an item from a waypoint, if that waypoint has items
+		case CSmModeEvent::EType::OnPlayerTriggersWaypoint: {
+			declare VirtualPickups::K_VirtualPickup[] Pickups = VirtualPickups::GetByHolder(Event.Landmark);
+			if (Pickups.count > 0) {
+				declare VirtualPickups::K_VirtualPickup Pickup = Pickups[0];
+				VirtualPickups::SetHolder(Pickup.Id, Event.Player);
+			}
+		}
+	}
+}
+
+foreach (Player in Players) {
+	if (Player.SpawnStatus == CSmPlayer::ESpawnStatus::NotSpawned) {
+		SpawnPlayer(Player, Player.CurrentClan, 100, G_SpawnLandmarks[0].PlayerSpawn, Now);
+	}
+}
+
+// React to event from client UIs. These events are sent from the client inventory layer directly.
+foreach (Event in UIManager.PendingEvents) {
+	if (Event.CustomEventType == Inventory::C_Event_ItemDrop) {
+		// Event contains reference to the UI it came from and data as textarray (and more).
+		// The inventory sends only the ID of the pickup that is being dropped as first and only entry in the CustomEventData.
+		declare CSmPlayer Player <=> GetPlayer(Event.UI);
+		if (Player != Null) DropItem(Player, Event.CustomEventData[0]);
+	}
+}
+
+// Need to let the clients know about the items they carry. Needs to be called when when the holder for an item changed (or every loop if you're lazy)
+Inventory::Net_SendPickupData();
+***
+
+Void DropItem(CSmPlayer Player, Text Id) {
+	if (VirtualPickups::Exists(Id)) {
+		declare VirtualPickups::K_VirtualPickup Pickup = VirtualPickups::Get(Id);
+		if (Pickup.Holder == Player) {
+			VirtualPickups::SetPosition(Id, Player.Position);
+		}
+	}
+}
