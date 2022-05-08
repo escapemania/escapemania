@@ -1,0 +1,90 @@
+#Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/VirtualPickups.Script.txt" as VirtualPickups
+#Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/Inventory.Script.txt" as Inventory
+
+#Include "TextLib" as TL
+#Include "MathLib" as ML
+
+
+#Const C_DropOffLandmarkTagPrefix "X_DropOff_"
+#Const C_PickupLandmarkTag "X_Pickup"
+#Const C_PickupIdPrefix "X_Pickup_"
+#Const C_PickupCustomDataKey_IsXPuzzlePickup "IsXPuzzlePickup"
+#Const C_PickupSnapRadius 12.
+
+declare CSmMapLandmark[] G_DropLandmarks;
+
+Void Private_OnDropRequested(VirtualPickups::K_VirtualPickup Pickup, CSmPlayer Player) {
+	if(Player == Null || Pickup.Holder != Player) return;
+
+	declare CSmMapLandmark SnapLandmark;
+	foreach (Landmark in G_DropLandmarks) {
+		declare Real DistanceToLandmark = ML::Distance(Player.Position, Landmark.Position);
+		if (DistanceToLandmark <= C_PickupSnapRadius) {
+			SnapLandmark = Landmark;
+		}
+	}
+
+	if(SnapLandmark != Null) {
+		VirtualPickups::SetHolder(Pickup.Id, SnapLandmark);
+	} else {
+		declare UI = UIManager.GetUI(Player);
+		UI.QueueMessage(2000, 1, CUIConfig::EMessageDisplay::Big, "You can not drop this item on the ground!");
+	}
+}
+
+Void CreatePickup(CSmMapLandmark Landmark, Text Id) {
+	VirtualPickups::Create(Id);
+	VirtualPickups::SetHolder(Id, Landmark);
+	VirtualPickups::SetCustomDataBoolean(Id, C_PickupCustomDataKey_IsXPuzzlePickup, True);
+	declare VirtualPickups::K_MarkerConfig MarkerConfig = VirtualPickups::DefaultMarkerConfig();
+	MarkerConfig.Label = "X Pickup";
+	MarkerConfig.HudVisibility = CUIConfigMarker::EHudVisibility::WhenVisible;
+	VirtualPickups::SetMarkerConfig(Id, MarkerConfig);
+}
+
+Void Init() {
+	declare Integer PickupIdSuffix = 0;
+	G_DropLandmarks.clear();
+	foreach (Landmark in MapLandmarks) {
+		if (Landmark.Tag == C_PickupLandmarkTag) {
+			PickupIdSuffix += 1;
+			CreatePickup(Landmark, C_PickupIdPrefix ^ PickupIdSuffix);
+		}
+
+		if (TL::StartsWith(C_DropOffLandmarkTagPrefix, Landmark.Tag)) {
+			G_DropLandmarks.add(Landmark);
+		}
+	}
+}
+
+Void Loop() {
+	foreach (Event in PendingEvents) {
+		switch (Event.Type) {
+			case CSmModeEvent::EType::OnPlayerTriggersWaypoint: {
+				if (Event.Landmark.Tag == C_PickupLandmarkTag) {
+					declare VirtualPickups::K_VirtualPickup[] LandmarkPickups = VirtualPickups::GetByHolder(Event.Landmark);
+					if (LandmarkPickups.count > 0) {
+						declare VirtualPickups::K_VirtualPickup Pickup = LandmarkPickups[0];
+						VirtualPickups::SetHolder(Pickup.Id, Event.Player);
+					}
+				}
+			}
+		}
+	}
+
+	foreach (Event in Inventory::GetPendingEvents()) {
+		if (VirtualPickups::Exists(Event.PickupId)) {
+			declare VirtualPickups::K_VirtualPickup Pickup = VirtualPickups::Get(Event.PickupId);
+			declare Boolean IsXPuzzlePickup = Pickup.CustomData.BooleanData.get(C_PickupCustomDataKey_IsXPuzzlePickup, False);
+
+			if(!IsXPuzzlePickup) {
+				continue;
+			}
+
+			switch (Event.Type) {
+				case Inventory::C_Event_ItemDrop: {
+					Private_OnDropRequested(Pickup, Event.Player);}
+			}
+		}
+	}
+}

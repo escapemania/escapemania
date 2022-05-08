@@ -43,6 +43,34 @@
 }
 // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+#Struct K_InventoryEvent {
+	CSmPlayer Player;
+	Text Type;
+	Text PickupId;
+}
+
+declare K_InventoryEvent[] G_PendingEvents;
+
+Void Private_UpdatePendingEvents() {
+	G_PendingEvents.clear();
+	foreach(Event in UIManager.PendingEvents) {
+		switch (Event.CustomEventType) {
+			case C_Event_ItemDrop: {
+				declare K_InventoryEvent InventoryEvent = K_InventoryEvent{
+					Player = GetPlayer(Event.UI),
+					Type = C_Event_ItemDrop,
+					PickupId = Event.CustomEventData[0]
+				};
+				G_PendingEvents.add(InventoryEvent);
+			}
+		}
+	}
+}
+
+K_InventoryEvent[] GetPendingEvents() {
+	return G_PendingEvents;
+}
+
 /**
  * FOR INTERNAL USE ONLY.
  * Reduces VirtualPickups to a subset of members that can be sent to the clients.
@@ -87,6 +115,14 @@ Void Net_SendPickupData(CSmPlayer Player) {
  */
 Void Net_SendPickupData() {
 	foreach (Player in Players) Net_SendPickupData(Player);
+}
+
+/**
+ * Updates the library
+ */
+Void Loop() {
+	Net_SendPickupData();
+	Private_UpdatePendingEvents();
 }
 
 /**

@@ -1,0 +1,34 @@
+
+#Const C_EnergyWallInitialStadeIndex 10
+#Const C_LoopTriggerTag "LoopTrigger"
+#Const C_MediaTrackerClipPrefix "Wall "
+#Const C_DeathTriggerTag "EnergyWallDeathTrigger"
+
+declare Integer G_WallState;
+
+Void Init() {
+	G_WallState = 10;
+	UIManager.UIAll.UISequence = CUIConfig::EUISequence::CustomMTClip;
+	UIManager.UIAll.UISequence_CustomMTClip = C_MediaTrackerClipPrefix ^ G_WallState;
+}
+
+Void LowerWall() {
+	if (G_WallState > 0) {
+		G_WallState -= 1;
+		UIManager.UIAll.UISequence_CustomMTClip = C_MediaTrackerClipPrefix ^ G_WallState;
+	}
+}
+
+Void Loop() {
+	foreach (Event in PendingEvents) {
+		switch (Event.Type) {
+			case CSmModeEvent::EType::OnPlayerTriggersWaypoint: {
+				if (Event.Landmark.Tag == C_LoopTriggerTag) {
+					LowerWall();
+				} else if (Event.Landmark.Tag == C_DeathTriggerTag && G_WallState > 1) {
+					UnspawnPlayer(Event.Player);
+				}
+			}
+		}
+	}
+}

@@ -2,6 +2,11 @@
 
 #Extends "Libs/Nadeo/TMNext/TrackMania/Modes/TMNextBase.Script.txt"
 
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/EnergyWall/EnergyWall.Script.txt" as EnergyWall
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/XPuzzle/XPuzzle.Script.txt" as XPuzzle
+#Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/Inventory.Script.txt" as Inventory
+
+
 #Include "TextLib" as TL
 #Include "MathLib" as ML
 
@@ -9,11 +14,19 @@
 #Const	Version												"0.0.1"
 #Const	ScriptName										"Modes/Trackmania/EscapeMania.Script.txt"
 
+#Const C_Layer_Inventory "Layer_Inventory"
+
+
 declare CSmMapLandmark[] G_SpawnLandmarks;
+declare CSmMapLandmark G_DevSpawn;
 
 ***Match_StartServer***
 ***
 Race::UseCppRaceProgression(False);
+
+Layers::Create(C_Layer_Inventory, Inventory::GetManialink());
+Layers::SetType(C_Layer_Inventory, CUILayer::EUILayerType::Normal);
+Layers::Attach(C_Layer_Inventory);
 ***
 
 ***Match_StartMap***
@@ -21,19 +34,46 @@ Race::UseCppRaceProgression(False);
 G_SpawnLandmarks = [];
 foreach (Landmark in MapLandmarks) {
 	if (Landmark.PlayerSpawn != Null) {
+		if (Landmark.Tag == "DevSpawn") {
+			G_DevSpawn = Landmark;
+		}
 		G_SpawnLandmarks.add(Landmark);
 	}
 }
 assert(G_SpawnLandmarks.count > 0);
 ***
 
+***Match_StartPlayLoop***
+***
+EnergyWall::Init();
+XPuzzle::Init();
+***
+
 ***Match_PlayLoop***
 ***
-foreach (Player in Players) {
-	if (Player.SpawnStatus == CSmPlayer::ESpawnStatus::NotSpawned) {
-		SpawnPlayer (Player, Player.CurrentClan, 100, G_SpawnLandmarks[0].PlayerSpawn, Now);
+foreach (Event in PendingEvents) {
+	switch (Event.Type) {
+		case CSmModeEvent::EType::OnPlayerRequestRespawn: {
+			UnspawnPlayer(Event.Player);
+		}
 	}
 }
+
+foreach (Player in Players) {
+	if (Player.SpawnStatus == CSmPlayer::ESpawnStatus::NotSpawned) {
+		declare CMapSpawn Spawn;
+		if (G_DevSpawn != Null) {
+			Spawn = G_DevSpawn.PlayerSpawn;
+		} else {
+			Spawn = G_SpawnLandmarks[0].PlayerSpawn;
+		}
+		SpawnPlayer (Player, Player.CurrentClan, 100, Spawn, Now);
+	}
+}
+
+EnergyWall::Loop();
+XPuzzle::Loop();
+Inventory::Loop();
 ***
 
 Void DoNothing() {}
