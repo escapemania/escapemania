@@ -1,4 +1,3 @@
-
 #Const C_EnergyWallInitialStadeIndex 10
 #Const C_LoopTriggerTag "LoopTrigger"
 #Const C_MediaTrackerClipPrefix "Wall "
@@ -15,7 +14,24 @@ Void Init() {
 Void LowerWall() {
 	if (G_WallState > 0) {
 		G_WallState -= 1;
+		if (G_WallState == 1) {
+			G_WallState = 0;
+		}
+
 		UIManager.UIAll.UISequence_CustomMTClip = C_MediaTrackerClipPrefix ^ G_WallState;
+
+		// Tell all the players something happened!
+		if (G_WallState > 0) {
+			foreach (Player in Players) {
+				declare UI = UIManager.GetUI(Player);
+				UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
+			}
+		} else {
+			foreach (Player in Players) {
+				declare UI = UIManager.GetUI(Player);
+				UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
+			}
+		}
 	}
 }
 

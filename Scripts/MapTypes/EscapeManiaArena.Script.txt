@@ -70,7 +70,7 @@ Void UpdateValidability() {
 		if (IsStart(Anchor)) StartCount += 1;
 		if (IsFinish(Anchor)) FinishCount += 1;
 	}
-	
+	/*
 	if (StartCount != 1) {
 		IsValid = False;
 		ValidationErrors.add("""- You need to place exactly one "{{{C_AnchorTag_Start}}}" or "{{{C_AnchorTag_StartFinish}}}" block. (Found: {{{StartCount}}})""");
@@ -80,7 +80,7 @@ Void UpdateValidability() {
 		IsValid = False;
 		ValidationErrors.add("""- You need to place at least one "{{{C_AnchorTag_Finish}}}" block""");
 	}
-	
+	*/
 	if (IsValid) {
 		ValidationStatus = CMapType::ValidationStatus::Validated;
 		ValidabilityRequirementsMessage = "Map is valid";

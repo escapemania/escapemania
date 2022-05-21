@@ -6,11 +6,9 @@
 
 #Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/VirtualPickups.Script.txt" as VirtualPickups
 
-#Const C_WindowOpacity 0.7
+#Const C_WindowOpacity 0.1
 
 #Const C_ControlId_ItemSlotPrefix "slot-"
-#Const C_ControlId_ItemDrop "drop"
-#Const C_ControlId_ItemInfo "info"
 
 #Const C_Event_ItemDrop "Inventory_DropItem"
 
@@ -134,11 +132,9 @@ Text GetManialink() {
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <manialink version="3" name="VirtualPickups_Inventory">
 	<framemodel id="itemslot">
-		<quad z-index="-1" size="25 15" bgcolor="000" opacity="{{{ C_WindowOpacity }}}" valign="center" halign="center" id="background"/>
+		<quad z-index="-1" size="15 15" bgcolor="000" opacity="{{{ C_WindowOpacity }}}" valign="center" halign="center" id="background"/>
 		<frame id="content">
-			<quad pos="-5" z-index="0" size="15 15" bgcolor="FFF" opacity="1" halign="center" valign="center" id="icon"/>
-			<quad pos="7.5 7.5" z-index="0" size="7.5 7.5" bgcolor="FFF" opacity="1" id="{{{ C_ControlId_ItemInfo }}}" halign="center" style="UICommon64_1" substyle="Info_light" valign="top" scriptevents="1" data-show-tooltip="True"/>
-			<quad pos="7.5 -7.5" z-index="0" size="7.5 7.5" bgcolor="FFF" opacity="1" id="{{{ C_ControlId_ItemDrop }}}" halign="center" style="UICommon64_1" substyle="Paste_light" valign="bottom" scriptevents="1"/>
+			<quad z-index="0" size="15 15" bgcolor="FFF" opacity="1" halign="center" valign="center" id="icon" scriptevents="1" data-show-tooltip="True" />
 		</frame>
 	</framemodel>
 
@@ -155,35 +151,20 @@ Text GetManialink() {
 	</frame>
 
 	<frame id="inventory" z-index="1">
-		<quad  z-index="-1" size="110 50" opacity="{{{ C_WindowOpacity }}}" halign="center" valign="center" bgcolor="000" id="background"/>
-
-		<frame id="header" pos="0 18.5">
-			<label  z-index="0" size="50 10" text="Inventory" halign="left" textfont="GameFontBlack" pos="-53" textsize="5" id="label" valign="center2"/>
-			<quad  z-index="0" size="10 10" bgcolor="FFF" halign="right" pos="53" valign="center" style="UICommon64_2" substyle="CloseWindow_light" scriptevents="1" id="close"/>
-			<quad  z-index="0" size="110 1" bgcolor="FFF" opacity="1" halign="center" valign="center" pos="0 -6"/>
+		<frame id="slots" pos="7.5 80">
+			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-0" pos="-67"/>
+			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-1" pos="-50"/>
+			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-2" pos="-33"/>
+			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-3" pos="-16"/>
+			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-4" pos="1"/>
+			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-5" pos="18"/>
+			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-6" pos="35"/>
+			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-7" pos="52"/>
 		</frame>
-
-		<frame id="slots" pos="0 2">
-			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-0" pos="-40.5"/>
-			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-1" pos="-13.5"/>
-			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-2" pos="13.5"/>
-			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-3" pos="40.5"/>
-			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-4" pos="-40.5 -17"/>
-			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-5" pos="-13.5 -17"/>
-			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-6" pos="13.5 -17"/>
-			<frameinstance modelid="itemslot" id="{{{ C_ControlId_ItemSlotPrefix }}}-7" pos="40.5 -17"/>
-		</frame>
-	</frame>
-
-	<frame id="toggle-inventory-wrapper" pos="150 -80" z-index="0">
-		<quad  z-index="-1" size="10 10" bgcolor="000" opacity="{{{ C_WindowOpacity }}}" id="background" halign="center" valign="center"/>
-		<quad  size="10 10" bgcolor="FFF" opacity="1" substyle="DisplayIcons_light" style="UICommon64_2" id="toggle-inventory" halign="center" valign="center" pos="0" scriptevents="1"/>
 	</frame>
 
 	<script><!--
 	#Include "TextLib" as TL
-
-	#Const C_IventoryAnimDuration 500
 
 	#Const C_DataAttributeKey_PickupId "pickup-id"
 	#Const C_DataAttributeKey_TooltipName "tooltip-name"
@@ -217,12 +198,9 @@ Text GetManialink() {
 		CMlFrame Frame;
 		CMlFrame ContentFrame;
 		CMlQuad Icon;
-		CMlQuad InfoButton;
-		CMlQuad DropButton;
 	}
 
 	#Struct K_Inventory {
-		Boolean State;
 		CMlFrame Frame;
 		CMlQuad ButtonClose;
 		K_ItemSlot[] ItemSlots;
@@ -244,31 +222,20 @@ Text GetManialink() {
 	declare CMlQuad InventoryToggleButton;
 
 	Void InitMlControlReferences() {
-		InventoryToggleFrame = (Page.GetFirstChild("toggle-inventory-wrapper") as CMlFrame);
-		InventoryToggleButton = (InventoryToggleFrame.GetFirstChild("toggle-inventory") as CMlQuad);
-
 		Inventory.Frame = (Page.GetFirstChild("inventory") as CMlFrame);
-		Inventory.ButtonClose = (Inventory.Frame.GetFirstChild("close") as CMlQuad);
 		declare CMlFrame SlotsWrapper = (Inventory.Frame.GetFirstChild("slots") as CMlFrame);
 		for (I, 0, 7) {
 			declare CMlFrame SlotFrame = (SlotsWrapper.GetFirstChild("{{{ C_ControlId_ItemSlotPrefix }}}-" ^ I) as CMlFrame);
 			declare CMlFrame ContentFrame = (SlotFrame.GetFirstChild("content") as CMlFrame);
 			declare CMlQuad SlotIcon = (SlotFrame.GetFirstChild("icon") as CMlQuad);
-			declare CMlQuad SlotInfo = (SlotFrame.GetFirstChild("{{{ C_ControlId_ItemInfo }}}") as CMlQuad);
-			declare CMlQuad SlotDrop = (SlotFrame.GetFirstChild("{{{ C_ControlId_ItemDrop }}}") as CMlQuad);
 			declare K_ItemSlot Slot = K_ItemSlot{
 				Index = I,
 				Frame = SlotFrame,
 				ContentFrame = ContentFrame,
-				Icon = SlotIcon,
-				InfoButton = SlotInfo,
-				DropButton = SlotDrop
+				Icon = SlotIcon
 			};
 			Inventory.ItemSlots.add(Slot);
 		}
-
-		Inventory.Frame.RelativePosition_V3 = InventoryToggleFrame.RelativePosition_V3;
-		Inventory.Frame.RelativeScale = 0.;
 
 		declare CMlFrame TooltipFrame = (Page.GetFirstChild("tooltip") as CMlFrame);
 		declare CMlFrame TooltipTitleFrame = (TooltipFrame.GetFirstChild("title") as CMlFrame);
@@ -288,24 +255,6 @@ Text GetManialink() {
 		};
 	}
 
-	Void ToggleInventory() {
-		declare Text AnimTargetPos;
-		declare Text AnimTargetScale;
-		if (!Inventory.State) {
-			AnimTargetPos = "0 0";
-			AnimTargetScale = "1";
-		} else {
-			AnimTargetPos = InventoryToggleFrame.RelativePosition_V3.X ^ " " ^ InventoryToggleFrame.RelativePosition_V3.Y;
-			AnimTargetScale = "0";
-		}
-		Inventory.State = !Inventory.State;
-		AnimMgr.Add(Inventory.Frame, "<frame pos='" ^ AnimTargetPos ^ "' scale=" ^ AnimTargetScale ^ "/>", C_IventoryAnimDuration, CAnimManager::EAnimManagerEasing::QuintOut);
-	}
-
-	Void OnCloseInventoryClicked() {
-		if(Inventory.State) ToggleInventory();
-	}
-
 	Void OnDropClicked(CMlControl Control) {
 		if(Control.DataAttributeExists(C_DataAttributeKey_PickupId)) {
 			SendCustomEvent("{{{ C_Event_ItemDrop }}}", [Control.DataAttributeGet(C_DataAttributeKey_PickupId)]);
@@ -316,9 +265,7 @@ Text GetManialink() {
 		foreach (Event in PendingEvents) {
 			switch (Event.Type) {
 				case CMlScriptEvent::Type::MouseClick: {
-					if (Event.Control == InventoryToggleButton) ToggleInventory();
-					else if (Event.Control == Inventory.ButtonClose) OnCloseInventoryClicked();
-					else if (Event.ControlId == "drop") OnDropClicked(Event.Control);
+					if (Event.ControlId == "icon") OnDropClicked(Event.Control);
 				}
 			}
 		}
@@ -332,7 +279,7 @@ Text GetManialink() {
 
 		declare netread K_Net_VirtualPickup[] Net_Inventory_Pickups for GUIPlayer;
 		foreach (Index => Slot in Inventory.ItemSlots) {
-			if (!Net_Inventory_Pickups.existskey(Index)){
+			if (!Net_Inventory_Pickups.existskey(Index)) {
 				Slot.ContentFrame.Hide();
 				continue;
 			}
@@ -344,18 +291,14 @@ Text GetManialink() {
 			declare Text PickupName = TL::Trim(Pickup.CustomData.TextData.get("{{{ C_PickupCustomDataKey_Name }}}", ""));
 			declare Text PickupDescription = TL::Trim(Pickup.CustomData.TextData.get("{{{ C_PickupCustomDataKey_Description }}}", ""));
 			if (PickupName == "" && PickupDescription == "") {
-				Slot.InfoButton.Opacity = 0.5;
-				Slot.InfoButton.ScriptEvents_Disable();
+				Slot.Icon.ScriptEvents_Disable();
+			} else {
+				Slot.Icon.ScriptEvents_Restore();
 			}
-			else {
-				Slot.InfoButton.Opacity = 1.;
-				Slot.InfoButton.ScriptEvents_Restore();
-			}
-			Slot.InfoButton.DataAttributeSet(C_DataAttributeKey_TooltipName, PickupName);
-			Slot.InfoButton.DataAttributeSet(C_DataAttributeKey_TooltipDescription, PickupDescription);
-			Slot.DropButton.DataAttributeSet(C_DataAttributeKey_PickupId, Pickup.Id);
+			Slot.Icon.DataAttributeSet(C_DataAttributeKey_TooltipName, PickupName);
+			Slot.Icon.DataAttributeSet(C_DataAttributeKey_TooltipDescription, PickupDescription);
+			Slot.Icon.DataAttributeSet(C_DataAttributeKey_PickupId, Pickup.Id);
 			Slot.ContentFrame.Show();
-
 		}
 	}
 

@@ -1,0 +1,149 @@
+#Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/VirtualPickups.Script.txt" as VirtualPickups
+#Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/Inventory.Script.txt" as Inventory
+
+#Const C_ItemType "ItemType"
+
+#Const C_OrbItemType "Orb"
+#Const C_HelmetItemType "Helmet"
+#Const C_LetterU_ItemType "LetterU"
+#Const C_LetterI_ItemType "LetterI"
+#Const C_LetterL_ItemType "LetterL"
+#Const C_LetterN_ItemType "LetterN"
+#Const C_PowerSourceItemType "PowerSource"
+
+declare Integer G_Item_Count;
+
+Void CreateItem(CSmMapLandmark Landmark, Text Type, Text Name, Text Description, Text Icon) {
+	G_Item_Count += 1;
+	declare Text PickupId = Type ^ G_Item_Count;
+	VirtualPickups::Create(PickupId);
+	VirtualPickups::SetHolder(PickupId, Landmark);
+	VirtualPickups::SetCustomDataText(PickupId, C_ItemType, Type);
+
+	declare VirtualPickups::K_MarkerConfig MarkerConfig = VirtualPickups::DefaultMarkerConfig();
+	MarkerConfig.HudVisibility = CUIConfigMarker::EHudVisibility::WhenVisible;
+	MarkerConfig.ImageUrl = Icon;
+
+	VirtualPickups::SetMarkerConfig(PickupId, MarkerConfig);
+	VirtualPickups::SetCustomDataText(PickupId, Inventory::C_PickupCustomDataKey_ImageUrl, Icon);
+	VirtualPickups::SetCustomDataText(PickupId, Inventory::C_PickupCustomDataKey_Name, Name);
+	VirtualPickups::SetCustomDataText(PickupId, Inventory::C_PickupCustomDataKey_Description, Description);	
+}
+
+Text GetPickupType(VirtualPickups::K_VirtualPickup Pickup) {
+	return Pickup.CustomData.TextData.get(C_ItemType, "");
+}
+
+Void Init() {
+	G_Item_Count = 0;
+}
+
+// ---------
+
+Void CreateOrbItem(CSmMapLandmark Landmark) {
+	CreateItem(
+		Landmark,
+		C_OrbItemType,
+		"A glowing orb",
+		"It is attracted to round moving objects...",
+		"https://cdn.discordapp.com/attachments/929103899137310810/973034869439479888/x_item.png"
+	);
+}
+
+Boolean IsOrbItem(VirtualPickups::K_VirtualPickup Pickup) {
+	return GetPickupType(Pickup) == C_OrbItemType;
+}
+
+Void CreateHelmetItem(CSmMapLandmark Landmark) {
+	CreateItem(
+		Landmark,
+		C_HelmetItemType,
+		"Water Breathing Helmet",
+		"This strange helmet lets you breath under water when powered by a blue power source.",
+		"https://cdn.discordapp.com/attachments/929103899137310810/977318149403836566/helmet_item.png"
+	);
+}
+
+Boolean IsHelmetItem(VirtualPickups::K_VirtualPickup Pickup) {
+	return GetPickupType(Pickup) == C_HelmetItemType;
+}
+
+
+Void CreateLetterUItem(CSmMapLandmark Landmark) {
+	CreateItem(
+		Landmark,
+		C_LetterU_ItemType,
+		"U Pipe",
+		"A thick U-shaped piece of pipe.",
+		"https://cdn.discordapp.com/attachments/929103899137310810/977341199046299668/letter_U_item.png"
+	);
+}
+
+Boolean IsLetterUItem(VirtualPickups::K_VirtualPickup Pickup) {
+	return GetPickupType(Pickup) == C_LetterU_ItemType;
+}
+
+Void CreateLetterIItem(CSmMapLandmark Landmark) {
+	CreateItem(
+		Landmark,
+		C_LetterI_ItemType,
+		"I Pipe",
+		"A thick I-shaped piece of pipe.",
+		"https://cdn.discordapp.com/attachments/929103899137310810/977341199289548830/letter_I_item.png"
+	);
+}
+
+Boolean IsLetterIItem(VirtualPickups::K_VirtualPickup Pickup) {
+	return GetPickupType(Pickup) == C_LetterI_ItemType;
+}
+
+Void CreateLetterLItem(CSmMapLandmark Landmark) {
+	CreateItem(
+		Landmark,
+		C_LetterL_ItemType,
+		"L Pipe",
+		"A thick L-shaped piece of pipe.",
+		"https://cdn.discordapp.com/attachments/929103899137310810/977341199503487016/letter_L_item.png"
+	);
+}
+
+Boolean IsLetterLItem(VirtualPickups::K_VirtualPickup Pickup) {
+	return GetPickupType(Pickup) == C_LetterL_ItemType;
+}
+
+Void CreateLetterNItem(CSmMapLandmark Landmark) {
+	CreateItem(
+		Landmark,
+		C_LetterN_ItemType,
+		"N Pipe",
+		"A thick N-shaped piece of pipe.",
+		"https://cdn.discordapp.com/attachments/929103899137310810/977341199725760523/letter_N_item.png"
+	);
+}
+
+Boolean IsLetterNItem(VirtualPickups::K_VirtualPickup Pickup) {
+	return GetPickupType(Pickup) == C_LetterN_ItemType;
+}
+
+Boolean IsLetterItem(VirtualPickups::K_VirtualPickup Pickup) {
+	return (
+		IsLetterUItem(Pickup) ||
+		IsLetterIItem(Pickup) ||
+		IsLetterLItem(Pickup) ||
+		IsLetterNItem(Pickup)
+	);
+}
+
+Void CreatePowerSourceItem(CSmMapLandmark Landmark) {
+	CreateItem(
+		Landmark,
+		C_PowerSourceItemType,
+		"Blue Power Source",
+		"This blue power source activates magical objects.",
+		"https://cdn.discordapp.com/attachments/929103899137310810/977363945834831913/powersource_item.png"
+	);
+}
+
+Boolean IsPowerSourceItem(VirtualPickups::K_VirtualPickup Pickup) {
+	return GetPickupType(Pickup) == C_PowerSourceItemType;
+}

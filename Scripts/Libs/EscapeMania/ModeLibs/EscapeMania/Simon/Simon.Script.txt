@@ -1,0 +1,108 @@
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Items/Items.Script.txt" as Items
+
+#Include "TextLib" as TL
+
+#Const C_LandmarkPrefix "Simon_"
+#Const C_Red "Simon_Red"
+#Const C_Blue "Simon_Blue"
+#Const C_Green "Simon_Green"
+#Const C_Yellow "Simon_Yellow"
+
+#Const C_Hex_Red "$f20"
+#Const C_Hex_Blue "$02f"
+#Const C_Hex_Green "$2f0"
+#Const C_Hex_Yellow "$fd0"
+
+#Const C_LetterULandmarkTag "Pipe_Letter_U"
+#Const C_LetterILandmarkTag "Pipe_Letter_I"
+#Const C_LetterLLandmarkTag "Pipe_Letter_L"
+#Const C_LetterNLandmarkTag "Pipe_Letter_N"
+
+declare Integer G_CurrentStep;
+
+Boolean IsCorrect(Integer step, Text landmark) {
+	return (
+		step == 0 && landmark == C_Blue ||
+		step == 1 && landmark == C_Red ||
+		step == 2 && landmark == C_Green ||
+		step == 3 && landmark == C_Yellow ||
+		step == 4 && landmark == C_Red ||
+		step == 5 && landmark == C_Yellow ||
+		step == 6 && landmark == C_Green ||
+		step == 7 && landmark == C_Blue
+	);
+}
+
+Text GetHintColor(Integer step) {
+	if (step == 0) return C_Hex_Blue;
+	if (step == 1) return C_Hex_Red;
+	if (step == 2) return C_Hex_Green;
+	if (step == 3) return C_Hex_Yellow;
+	if (step == 4) return C_Hex_Red;
+	if (step == 5) return C_Hex_Yellow;
+	if (step == 6) return C_Hex_Green;
+	if (step == 7) return C_Hex_Blue;
+	return "";
+}
+
+Void DisplayHint(Text hintColor, CSmPlayer player) {
+	declare UI = UIManager.GetUI(player);
+	UI.QueueMessage(2000, 1, CUIConfig::EMessageDisplay::Big, hintColor ^ "");
+}
+
+Void CompletePuzzle() {
+	// Create Letter Items
+	foreach (Landmark in MapLandmarks) {
+		if (Landmark.Tag == C_LetterULandmarkTag) {
+			Items::CreateLetterUItem(Landmark);
+		} else if (Landmark.Tag == C_LetterILandmarkTag) {
+			Items::CreateLetterIItem(Landmark);
+		} else if (Landmark.Tag == C_LetterLLandmarkTag) {
+			Items::CreateLetterLItem(Landmark);
+		} else if (Landmark.Tag == C_LetterNLandmarkTag) {
+			Items::CreateLetterNItem(Landmark);
+		}
+	}
+	
+	// Tell all the players something happened!
+	foreach (Player in Players) {
+		declare UI = UIManager.GetUI(Player);
+		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
+	}
+}
+
+Void OnLandmark(Text landmark, CSmPlayer player) {
+	if (G_CurrentStep == 8) {
+		return;
+	}
+	
+  if (IsCorrect(G_CurrentStep, landmark)) {
+		G_CurrentStep += 1;
+	} else {
+		G_CurrentStep = 0;
+	}
+	
+	if (G_CurrentStep == 8) {
+		CompletePuzzle();
+	} else {
+		DisplayHint(GetHintColor(G_CurrentStep), player);
+	}
+}
+
+Void Loop() {
+	foreach (Event in PendingEvents) {
+		switch (Event.Type) {
+			case CSmModeEvent::EType::OnPlayerTriggersWaypoint: {
+				if (TL::StartsWith(C_LandmarkPrefix, Event.Landmark.Tag)) {
+					OnLandmark(Event.Landmark.Tag, Event.Player);
+				}
+			}
+		}
+	}
+}
+
+Void Init() {
+	G_CurrentStep = 0;
+}
+
+
