@@ -1,4 +1,5 @@
 #Include "Libs/EscapeMania/ModeLibs/EscapeMania/Items/Items.Script.txt" as Items
+#Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/VirtualPickups.Script.txt" as VirtualPickups
 
 #Include "TextLib" as TL
 
@@ -47,10 +48,17 @@ Text GetHintColor(Integer step) {
 
 Void DisplayHint(Text hintColor, CSmPlayer player) {
 	declare UI = UIManager.GetUI(player);
-	UI.QueueMessage(2000, 1, CUIConfig::EMessageDisplay::Big, hintColor ^ "");
+	UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, hintColor ^ "");
 }
 
 Void CompletePuzzle() {
+	// Destroy Letter Items
+	foreach (Pickup in VirtualPickups::GetAll()) {
+		if (Items::IsLetterItem(Pickup)) {
+			VirtualPickups::Destroy(Pickup.Id);
+		}
+	}
+
 	// Create Letter Items
 	foreach (Landmark in MapLandmarks) {
 		if (Landmark.Tag == C_LetterULandmarkTag) {

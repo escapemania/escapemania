@@ -33,12 +33,10 @@ Boolean IsPuzzleComplete() {
 }
 
 Void CompletePuzzle() {
-	// Destroy Letter Items
-	foreach (Landmark in MapLandmarks) {
-		foreach (Pickup in VirtualPickups::GetByHolder(Landmark)) {
-			if (Items::IsLetterItem(Pickup)) {
-				VirtualPickups::Destroy(Pickup.Id);
-			}
+	// Destroy Letter Items & Power Source Items
+	foreach (Pickup in VirtualPickups::GetAll()) {
+		if (Items::IsLetterItem(Pickup) || Items::IsPowerSourceItem(Pickup)) {
+			VirtualPickups::Destroy(Pickup.Id);
 		}
 	}
 	

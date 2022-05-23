@@ -1,0 +1,135 @@
+#Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/VirtualPickups.Script.txt" as VirtualPickups
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Items/Items.Script.txt" as Items
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Wordle/Wordle.Script.txt" as Wordle
+
+#Include "TextLib" as TL
+
+#Const C_SuccessLandmarkTagPrefix "Tunnel_Success_"
+#Const C_SuccessLandmarkTag_1 "Tunnel_Success_1"
+#Const C_SuccessLandmarkTag_2 "Tunnel_Success_2"
+#Const C_SuccessLandmarkTag_3 "Tunnel_Success_3"
+#Const C_SuccessLandmarkTag_4 "Tunnel_Success_4"
+#Const C_ItemLandmarkTag "Tunnel_Item"
+
+#Const C_TunnelFailureLandmarkTag "Tunnel_Failure"
+#Const C_WordleFailureLandmarkTag "Wordle_Failure"
+#Const C_WordleTunnelFailureLandmarkTag "Wordle_Tunnel_Failure"
+
+declare Integer[CSmPlayer] G_IsSuccess;
+declare Boolean G_IsComplete;
+
+Void CompletePuzzle() {
+	G_IsComplete = True;
+	
+	// Destroy Badge Items
+	foreach (Pickup in VirtualPickups::GetAll()) {
+		if (Items::IsBadgeItem(Pickup)) {
+			VirtualPickups::Destroy(Pickup.Id);
+		}
+	}
+	
+	// Create Badge Items
+	foreach (Landmark in MapLandmarks) {
+		if (Landmark.Tag == C_ItemLandmarkTag) {
+			Items::CreateBadgeItem(Landmark);
+		}
+	}
+	
+	// Tell players something is happening
+	foreach (Player in Players) {
+		declare UI = UIManager.GetUI(Player);
+		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
+	}
+}
+
+Void OnFailureTest(CSmPlayer Player, Text Tag) {
+	if (
+		Tag == C_TunnelFailureLandmarkTag && !G_IsComplete ||
+		Tag == C_WordleFailureLandmarkTag && !Wordle::IsComplete() ||
+		Tag == C_WordleTunnelFailureLandmarkTag && (!G_IsComplete || !Wordle::IsComplete())
+	) {		
+		declare UI = UIManager.GetUI(Player);
+		log("Failure");
+		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
+	}
+}
+
+Void OnEnterTest(CSmPlayer Player, Text Tag) {
+	if (G_IsComplete) {
+		return;
+	}
+	
+	if (Tag == C_SuccessLandmarkTag_1) {
+		G_IsSuccess[Player] = 1;
+	} else if (Tag == C_SuccessLandmarkTag_2) {
+		G_IsSuccess[Player] = 2;
+	} else if (Tag == C_SuccessLandmarkTag_3) {
+		G_IsSuccess[Player] = 3;
+	} else if (Tag == C_SuccessLandmarkTag_4) {
+		G_IsSuccess[Player] = 4;
+	}
+
+	declare Boolean isSuccess1 = False;
+	declare Boolean isSuccess2 = False;
+	declare Boolean isSuccess3 = False;
+	declare Boolean isSuccess4 = False;
+	foreach (Player => Success in G_IsSuccess) {
+		if (Success == 1) {
+			isSuccess1 = True;
+		} else if (Success == 2) {
+			isSuccess2 = True;
+		} else if (Success == 3) {
+			isSuccess3 = True;
+		} else if (Success == 4) {
+			isSuccess4 = True;
+		}
+	}
+	
+	if (isSuccess1 && isSuccess2 && isSuccess3 && isSuccess4) {
+		CompletePuzzle();
+	} else {
+		declare UI = UIManager.GetUI(Player);
+		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
+	}
+}
+
+Void OnLeaveTest(CSmPlayer Player) {
+	G_IsSuccess[Player] = 0;
+}
+
+Void OnRespawn(CSmPlayer Player) {
+	OnLeaveTest(Player);
+}
+
+Void Init() {
+	G_IsComplete = False;
+}
+
+Void Loop() {
+	foreach (Event in PendingEvents) {
+		switch (Event.Type) {
+			case CSmModeEvent::EType::OnPlayerTriggersWaypoint: {
+				if (TL::StartsWith(C_SuccessLandmarkTagPrefix, Event.Landmark.Tag)) {
+					OnEnterTest(Event.Player, Event.Landmark.Tag);
+				} else if (
+					Event.Landmark.Tag == C_TunnelFailureLandmarkTag ||
+					Event.Landmark.Tag == C_WordleFailureLandmarkTag ||
+					Event.Landmark.Tag == C_WordleTunnelFailureLandmarkTag
+				) {
+					OnFailureTest(Event.Player, Event.Landmark.Tag);
+				} else if (Event.Landmark.Tag == C_ItemLandmarkTag) {
+					// Pickup
+					declare VirtualPickups::K_VirtualPickup[] LandmarkPickups = VirtualPickups::GetByHolder(Event.Landmark);
+					if (LandmarkPickups.count > 0) {
+						declare VirtualPickups::K_VirtualPickup Pickup = LandmarkPickups[0];
+						if (Items::IsBadgeItem(Pickup)) {
+							VirtualPickups::SetHolder(Pickup.Id, Event.Player);
+						}
+					}
+				} else {
+					OnLeaveTest(Event.Player);
+				}
+			}
+		}
+	}
+}

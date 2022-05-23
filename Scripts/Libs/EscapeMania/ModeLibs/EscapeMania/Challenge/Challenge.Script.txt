@@ -1,0 +1,73 @@
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Rooms/RoomsRequestRespawn.Script.txt" as RoomsRequestRespawn
+
+#Const C_EntranceLandmarkTag "Challenge_Start"
+#Const C_SpawnLandmarkTag "Challenge_Spawn"
+#Const C_EndLandmarkTag "Challenge_End"
+
+declare Ident G_CharacterPilotItemIdent;
+declare CSmPlayer G_CurrentPlayer;
+declare Boolean G_IsComplete;
+
+Void OnStartServer() {
+	ItemList_Begin();
+	G_CharacterPilotItemIdent = ItemList_Add("CharacterPilot");
+	ItemList_End();
+}
+
+CSmPlayer GetActivePlayer() {
+	return G_CurrentPlayer;
+}
+
+Void OnEnd(CSmPlayer Player) {
+	
+}
+
+Void OnLeave(CSmPlayer Player) {
+	G_CurrentPlayer = Null;
+	Player.ForceModelId = NullId;
+	UnspawnPlayer(Player);
+}
+
+Void OnEntrance(CSmPlayer Player) {
+	if (G_CurrentPlayer == Player) {
+		OnLeave(Player);
+		return;
+	}
+
+	if (G_CurrentPlayer != Null) {
+		RoomsRequestRespawn::RequestRespawn(Player);
+		declare UI = UIManager.GetUI(Player);
+		UI.QueueMessage(3000, 1, CUIConfig::EMessageDisplay::Big, " ");
+		return;
+	}
+	
+	G_CurrentPlayer = Player;
+	Player.ForceModelId = G_CharacterPilotItemIdent;
+	UnspawnPlayer(Player);
+}
+
+Void OnRespawn(CSmPlayer Player) {
+	if (Player != G_CurrentPlayer) {
+		return;
+	}
+	OnLeave(Player);
+}
+
+Void Init() {
+	G_CurrentPlayer = Null;
+	G_IsComplete = False;
+}
+
+Void Loop() {
+	foreach (Event in PendingEvents) {
+		switch (Event.Type) {
+			case CSmModeEvent::EType::OnPlayerTriggersWaypoint: {
+				if (Event.Landmark.Tag == C_EntranceLandmarkTag) {
+					OnEntrance(Event.Player);
+				} else if (Event.Landmark.Tag == C_EndLandmarkTag) {
+					OnEnd(Event.Player);
+				}
+			}
+		}
+	}
+}

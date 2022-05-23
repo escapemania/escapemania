@@ -10,10 +10,13 @@
 #Const C_LetterL_ItemType "LetterL"
 #Const C_LetterN_ItemType "LetterN"
 #Const C_PowerSourceItemType "PowerSource"
+#Const C_BottleItemType "Bottle"
+#Const C_KeyItemType "Key"
+#Const C_BadgeItemType "Badge"
 
 declare Integer G_Item_Count;
 
-Void CreateItem(CSmMapLandmark Landmark, Text Type, Text Name, Text Description, Text Icon) {
+Void CreateItem(CNod Landmark, Text Type, Text Name, Text Description, Text Icon) {
 	G_Item_Count += 1;
 	declare Text PickupId = Type ^ G_Item_Count;
 	VirtualPickups::Create(PickupId);
@@ -40,7 +43,7 @@ Void Init() {
 
 // ---------
 
-Void CreateOrbItem(CSmMapLandmark Landmark) {
+Void CreateOrbItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_OrbItemType,
@@ -54,7 +57,7 @@ Boolean IsOrbItem(VirtualPickups::K_VirtualPickup Pickup) {
 	return GetPickupType(Pickup) == C_OrbItemType;
 }
 
-Void CreateHelmetItem(CSmMapLandmark Landmark) {
+Void CreateHelmetItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_HelmetItemType,
@@ -69,7 +72,7 @@ Boolean IsHelmetItem(VirtualPickups::K_VirtualPickup Pickup) {
 }
 
 
-Void CreateLetterUItem(CSmMapLandmark Landmark) {
+Void CreateLetterUItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_LetterU_ItemType,
@@ -83,7 +86,7 @@ Boolean IsLetterUItem(VirtualPickups::K_VirtualPickup Pickup) {
 	return GetPickupType(Pickup) == C_LetterU_ItemType;
 }
 
-Void CreateLetterIItem(CSmMapLandmark Landmark) {
+Void CreateLetterIItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_LetterI_ItemType,
@@ -97,7 +100,7 @@ Boolean IsLetterIItem(VirtualPickups::K_VirtualPickup Pickup) {
 	return GetPickupType(Pickup) == C_LetterI_ItemType;
 }
 
-Void CreateLetterLItem(CSmMapLandmark Landmark) {
+Void CreateLetterLItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_LetterL_ItemType,
@@ -111,7 +114,7 @@ Boolean IsLetterLItem(VirtualPickups::K_VirtualPickup Pickup) {
 	return GetPickupType(Pickup) == C_LetterL_ItemType;
 }
 
-Void CreateLetterNItem(CSmMapLandmark Landmark) {
+Void CreateLetterNItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_LetterN_ItemType,
@@ -134,7 +137,7 @@ Boolean IsLetterItem(VirtualPickups::K_VirtualPickup Pickup) {
 	);
 }
 
-Void CreatePowerSourceItem(CSmMapLandmark Landmark) {
+Void CreatePowerSourceItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_PowerSourceItemType,
@@ -146,4 +149,46 @@ Void CreatePowerSourceItem(CSmMapLandmark Landmark) {
 
 Boolean IsPowerSourceItem(VirtualPickups::K_VirtualPickup Pickup) {
 	return GetPickupType(Pickup) == C_PowerSourceItemType;
+}
+
+Void CreateBottleItem(CNod Landmark) {
+	CreateItem(
+		Landmark,
+		C_BottleItemType,
+		"Message in a Bottle",
+		"The orbs must be placed\nWhere darkness lies\nin straight lines\nfor corners to meet\n      -- Captain",
+		"https://cdn.discordapp.com/attachments/929103899137310810/977637638574075985/bottle_item.png"
+	);
+}
+
+Boolean IsBottleItem(VirtualPickups::K_VirtualPickup Pickup) {
+	return GetPickupType(Pickup) == C_BottleItemType;
+}
+
+Void CreateKeyItem(CNod Landmark) {
+	CreateItem(
+		Landmark,
+		C_KeyItemType,
+		"Red Key",
+		"Use this key in the control room to stop the ship. When the ship is stopped, the mechanism that enables earth-like gravity movement no longer works!",
+		"https://cdn.discordapp.com/attachments/929103899137310810/977724464211066970/key_item.png"
+	);
+}
+
+Boolean IsKeyItem(VirtualPickups::K_VirtualPickup Pickup) {
+	return GetPickupType(Pickup) == C_KeyItemType;
+}
+
+Void CreateBadgeItem(CNod Landmark) {
+	CreateItem(
+		Landmark,
+		C_BadgeItemType,
+		"Badge Jammer",
+		"This badge jams access control mechanisms it encounters.",
+		"https://cdn.discordapp.com/attachments/929103899137310810/977724464412368926/badge_item.png"
+	);
+}
+
+Boolean IsBadgeItem(VirtualPickups::K_VirtualPickup Pickup) {
+	return GetPickupType(Pickup) == C_BadgeItemType;
 }

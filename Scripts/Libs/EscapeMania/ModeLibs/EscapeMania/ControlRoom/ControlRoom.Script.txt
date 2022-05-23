@@ -1,0 +1,82 @@
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Rooms/RoomsRequestRespawn.Script.txt" as RoomsRequestRespawn
+
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Items/Items.Script.txt" as Items
+#Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/VirtualPickups.Script.txt" as VirtualPickups
+
+
+#Const C_EntranceLandmarkTag "ControlRoom_Entrance"
+#Const C_KeyLandmarkTag "ControlRoom_Success"
+
+declare Boolean G_IsGateLocked;
+declare Boolean G_IsComplete;
+
+Void CompleteBadge() {
+	G_IsGateLocked = False;
+	foreach (Player in Players) {
+		declare UI = UIManager.GetUI(Player);
+		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "$2f0");
+	}
+}
+
+Void OnEntrance(CSmPlayer Player) {
+	if (G_IsGateLocked) {
+		foreach (Pickup in VirtualPickups::GetByHolder(Player)) {
+			if (Items::IsBadgeItem(Pickup)) {
+				CompleteBadge();
+				break;
+			}
+		}
+	}
+
+	if (G_IsGateLocked) {
+		declare UI = UIManager.GetUI(Player);
+		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "$f20");
+		RoomsRequestRespawn::RequestRespawn(Player);
+	}
+}
+
+Void CompletePuzzle() {
+	G_IsComplete = True;
+	foreach (Player in Players) {
+		SetPlayer_Delayed_GravityCoef(Player, 0.3);
+		declare UI = UIManager.GetUI(Player);
+		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
+	}
+}
+
+Void OnKey(CSmPlayer Player) {
+	if (G_IsComplete) {
+		return;
+	}
+	
+	foreach (Pickup in VirtualPickups::GetByHolder(Player)) {
+		if (Items::IsKeyItem(Pickup)) {
+			CompletePuzzle();
+			break;
+		}
+	}
+	
+	if (!G_IsComplete) {
+		declare UI = UIManager.GetUI(Player);
+		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
+	}
+}
+
+Void Init() {
+	G_IsGateLocked = True;
+	G_IsComplete = False;
+}
+
+Void Loop() {
+	foreach (Event in PendingEvents) {
+		switch (Event.Type) {
+			case CSmModeEvent::EType::OnPlayerTriggersWaypoint: {
+				if (Event.Landmark.Tag == C_EntranceLandmarkTag) {
+					OnEntrance(Event.Player);
+				} else if (Event.Landmark.Tag == C_KeyLandmarkTag) {
+					OnKey(Event.Player);
+				}
+			}
+		}
+	}
+}

@@ -1,4 +1,5 @@
-#Const C_EnergyWallInitialStadeIndex 10
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Rooms/RoomsRequestRespawn.Script.txt" as RoomsRequestRespawn
+
 #Const C_LoopTriggerTag "LoopTrigger"
 #Const C_MediaTrackerClipPrefix "Wall "
 #Const C_DeathTriggerTag "EnergyWallDeathTrigger"
@@ -7,29 +8,43 @@ declare Integer G_WallState;
 
 Void Init() {
 	G_WallState = 10;
-	UIManager.UIAll.UISequence = CUIConfig::EUISequence::CustomMTClip;
-	UIManager.UIAll.UISequence_CustomMTClip = C_MediaTrackerClipPrefix ^ G_WallState;
+	foreach (Player in Players) {
+		declare UI = UIManager.GetUI(Player);
+		UI.UISequence = CUIConfig::EUISequence::CustomMTClip;
+		UI.UISequence_CustomMTClip = C_MediaTrackerClipPrefix ^ G_WallState;
+	}
+}
+
+Void CompletePuzzle() {
+	G_WallState = 0;
+	foreach (Player in Players) {
+		declare UI = UIManager.GetUI(Player);
+		UI.UISequence_CustomMTClip = C_MediaTrackerClipPrefix ^ G_WallState;
+		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
+	}
+}
+
+Void OnRespawn(CSmPlayer Player) {
+	if (G_WallState > 0) {
+		declare UI = UIManager.GetUI(Player);
+		UI.UISequence_CustomMTClip = C_MediaTrackerClipPrefix ^ G_WallState;
+	}
 }
 
 Void LowerWall() {
 	if (G_WallState > 0) {
 		G_WallState -= 1;
+
 		if (G_WallState == 1) {
-			G_WallState = 0;
+			CompletePuzzle();
+			return;
 		}
 
-		UIManager.UIAll.UISequence_CustomMTClip = C_MediaTrackerClipPrefix ^ G_WallState;
-
-		// Tell all the players something happened!
 		if (G_WallState > 0) {
 			foreach (Player in Players) {
 				declare UI = UIManager.GetUI(Player);
+				UI.UISequence_CustomMTClip = C_MediaTrackerClipPrefix ^ G_WallState;
 				UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
-			}
-		} else {
-			foreach (Player in Players) {
-				declare UI = UIManager.GetUI(Player);
-				UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
 			}
 		}
 	}
@@ -42,7 +57,7 @@ Void Loop() {
 				if (Event.Landmark.Tag == C_LoopTriggerTag) {
 					LowerWall();
 				} else if (Event.Landmark.Tag == C_DeathTriggerTag && G_WallState > 1) {
-					UnspawnPlayer(Event.Player);
+					RoomsRequestRespawn::RequestRespawn(Event.Player);
 				}
 			}
 		}

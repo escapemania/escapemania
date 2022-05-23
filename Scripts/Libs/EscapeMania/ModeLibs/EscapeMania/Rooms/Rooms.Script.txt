@@ -1,0 +1,73 @@
+
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Challenge/Challenge.Script.txt" as Challenge
+
+#Const C_Room2LandmarkTag "Room2_Spawn"
+
+declare CMapSpawn G_Spawn;
+declare CMapSpawn G_Room2Spawn;
+declare CMapSpawn G_ChallengeSpawn;
+
+declare Boolean G_HasEnteredRoom2;
+
+declare CSmPlayer G_CurrentPlayer;
+
+
+Void Respawn(CSmPlayer Player) {
+	G_CurrentPlayer = Player;
+}
+
+Void CompletePuzzle() {
+	G_HasEnteredRoom2 = True;
+}
+
+Void OnStartMap() {
+	G_HasEnteredRoom2 = False;
+
+	G_Spawn = Null;
+	G_Room2Spawn = Null;
+	foreach (Landmark in MapLandmarks) {
+		if (Landmark.Tag == "DevSpawn" || (Landmark.Tag == "Spawn" && G_Spawn == Null)) {
+			G_Spawn = Landmark.PlayerSpawn;
+		}
+		if (Landmark.Tag == "Challenge_Spawn") {
+			G_ChallengeSpawn = Landmark.PlayerSpawn;
+		}
+		if (Landmark.Tag == C_Room2LandmarkTag) {
+			G_Room2Spawn = Landmark.PlayerSpawn;
+		}
+	}
+}
+
+CMapSpawn GetSpawn() {
+	declare CMapSpawn Spawn;
+	if (G_HasEnteredRoom2) {
+		return G_Room2Spawn;
+	}
+	return G_Spawn;
+}
+
+Void OnRespawn(CSmPlayer Player) {
+	RespawnPlayer(Player, GetSpawn());
+}
+
+Void Loop() {
+	foreach (Player in Players) {
+		if (Player.SpawnStatus == CSmPlayer::ESpawnStatus::NotSpawned) {
+			declare CMapSpawn Spawn = GetSpawn();
+			if (Player == Challenge::GetActivePlayer()) {
+				Spawn = G_ChallengeSpawn;
+			}
+			SpawnPlayer(Player, Player.CurrentClan, 100, Spawn, Now);
+		}
+	}
+
+	foreach (Event in PendingEvents) {
+		switch (Event.Type) {
+			case CSmModeEvent::EType::OnPlayerTriggersWaypoint: {
+				if (Event.Landmark.Tag == C_Room2LandmarkTag) {
+					CompletePuzzle();
+				}
+			}
+		}
+	}
+}

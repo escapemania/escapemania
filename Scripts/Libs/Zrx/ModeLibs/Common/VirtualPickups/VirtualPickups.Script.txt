@@ -242,7 +242,7 @@ Void SetPosition(Text Id, Vec3 Position) {
 Void SetHolder(Text Id, CNod Holder) {
 	assert(G_Pickups.existskey(Id), TL::Replace(C_Error_IdNotFound, "{Id}", Id));
 
-	if(Holder == G_Pickups[Id].Holder) return;
+	if (Holder == G_Pickups[Id].Holder) return;
 
 	// Update Holder
 	G_Pickups[Id].Holder = Holder;
@@ -250,8 +250,12 @@ Void SetHolder(Text Id, CNod Holder) {
 
 	// Recreate Marker
 	declare CUIConfigMarker NewMarker;
+	declare Boolean OnPlayer = False;
 	switchtype(Holder) {
-		case CSmPlayer: NewMarker = UIManager.UIAll.AddMarker(Holder as CSmPlayer);
+		case CSmPlayer: {
+			NewMarker = UIManager.UIAll.AddMarker(Holder as CSmPlayer);
+			OnPlayer = True;
+		}
 		case CModeVehicle: NewMarker = UIManager.UIAll.AddMarker(Holder as CModeVehicle);
 		case CMapLandmark: NewMarker = UIManager.UIAll.AddMarker(Holder as CMapLandmark);
 	}
@@ -260,6 +264,9 @@ Void SetHolder(Text Id, CNod Holder) {
 	if (NewMarker != Null) {
 		G_Markers[Id] = NewMarker;
 		Private_ApplyMarkerConfig(Id);
+		if (OnPlayer) {
+			NewMarker.HudVisibility = CUIConfigMarker::EHudVisibility::Never;
+		}
 	}
 }
 

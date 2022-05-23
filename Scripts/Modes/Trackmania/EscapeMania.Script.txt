@@ -2,13 +2,25 @@
 
 #Extends "Libs/Nadeo/TMNext/TrackMania/Modes/TMNextBase.Script.txt"
 
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Rooms/Rooms.Script.txt" as Rooms
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Rooms/RoomsRequestRespawn.Script.txt" as RoomsRequestRespawn
+
 #Include "Libs/EscapeMania/ModeLibs/EscapeMania/EnergyWall/EnergyWall.Script.txt" as EnergyWall
 #Include "Libs/EscapeMania/ModeLibs/EscapeMania/XPuzzle/XPuzzle.Script.txt" as XPuzzle
 #Include "Libs/EscapeMania/ModeLibs/EscapeMania/Simon/Simon.Script.txt" as Simon
 #Include "Libs/EscapeMania/ModeLibs/EscapeMania/Pipe/Pipe.Script.txt" as Pipe
-#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Items/Items.Script.txt" as Items
-#Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/Inventory.Script.txt" as Inventory
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Water/Water.Script.txt" as Water
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Turtle/Turtle.Script.txt" as Turtle
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Tunnel/TunnelMedia.Script.txt" as TunnelMedia
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Tunnel/TunnelItem.Script.txt" as TunnelItem
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Wordle/Wordle.Script.txt" as Wordle
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Challenge/Challenge.Script.txt" as Challenge
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/ControlRoom/ControlRoom.Script.txt" as ControlRoom
 
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Items/Items.Script.txt" as Items
+
+#Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/Inventory.Script.txt" as Inventory
+#Include "Libs/Zrx/ModeLibs/Common/Commands/ModeCommands.Script.txt" as ModeCommands
 
 #Include "TextLib" as TL
 #Include "MathLib" as ML
@@ -18,10 +30,7 @@
 #Const	ScriptName										"Modes/Trackmania/EscapeMania.Script.txt"
 
 #Const C_Layer_Inventory "Layer_Inventory"
-
-
-declare CSmMapLandmark[] G_SpawnLandmarks;
-declare CSmMapLandmark G_DevSpawn;
+#Const C_LayerName_ModeCommands "Layer_ModeCommands"
 
 ***Match_StartServer***
 ***
@@ -31,20 +40,18 @@ UIManager.UIAll.PlayerDisableFreeCam = True;
 Layers::Create(C_Layer_Inventory, Inventory::GetManialink());
 Layers::SetType(C_Layer_Inventory, CUILayer::EUILayerType::Normal);
 Layers::Attach(C_Layer_Inventory);
+
+ModeCommands::AddAdmin("KTaOsd-lTR2zkoskETSfPA"); // vjeux
+Layers::Create(C_LayerName_ModeCommands, ModeCommands::GetManialink());
+Layers::SetType(C_LayerName_ModeCommands, CUILayer::EUILayerType::Normal);
+Layers::Attach(C_LayerName_ModeCommands);
+
+Challenge::OnStartServer();
 ***
 
 ***Match_StartMap***
 ***
-G_SpawnLandmarks = [];
-foreach (Landmark in MapLandmarks) {
-	if (Landmark.PlayerSpawn != Null) {
-		if (Landmark.Tag == "DevSpawn") {
-			G_DevSpawn = Landmark;
-		}
-		G_SpawnLandmarks.add(Landmark);
-	}
-}
-assert(G_SpawnLandmarks.count > 0);
+Rooms::OnStartMap();
 ***
 
 ***Match_StartPlayLoop***
@@ -53,46 +60,102 @@ Items::Init();
 EnergyWall::Init();
 XPuzzle::Init();
 Simon::Init();
+Water::Init();
+Turtle::Init();
+TunnelMedia::Init();
+TunnelItem::Init();
+Wordle::Init();
+ControlRoom::Init();
+Challenge::Init();
 ***
+
+Void OnRespawn(CSmPlayer Player) {
+	Water::OnRespawn(Player);
+	EnergyWall::OnRespawn(Player);
+	Rooms::OnRespawn(Player);
+	Turtle::OnRespawn(Player);
+	Wordle::OnRespawn(Player);
+	TunnelMedia::OnRespawn(Player);
+	TunnelItem::OnRespawn(Player);
+	Challenge::OnRespawn(Player);
+}
 
 ***Match_PlayLoop***
 ***
 foreach (Event in PendingEvents) {
 	switch (Event.Type) {
 		case CSmModeEvent::EType::OnPlayerRequestRespawn: {
-			UnspawnPlayer(Event.Player);
+			OnRespawn(Event.Player);
 		}
 	}
 }
 
-foreach (Player in Players) {
-	if (Player.SpawnStatus == CSmPlayer::ESpawnStatus::NotSpawned) {
-		declare CMapSpawn Spawn;
-		if (G_DevSpawn != Null) {
-			Spawn = G_DevSpawn.PlayerSpawn;
-		} else {
-			Spawn = G_SpawnLandmarks[0].PlayerSpawn;
-		}
-		SpawnPlayer (Player, Player.CurrentClan, 100, Spawn, Now);
-	}
-}
-
-
-foreach (Event in PendingEvents) {
-	switch (Event.Type) {
-		case CSmModeEvent::EType::OnPlayerTriggersWaypoint: {
-			if (Event.Landmark.Tag == "Gravity") {
-				SetPlayer_Delayed_GravityCoef(Event.Player, 0.1);
+foreach (Command in ModeCommands::GetPendingCommands()) {
+  switch (Command.Name) { 
+    case "Command_complete": {
+			switch (Command.ValueText) {
+				case "x": XPuzzle::CompletePuzzle();
+				case "pipe": Pipe::CompletePuzzle();
+				case "energy": EnergyWall::CompletePuzzle();
+				case "simon": Simon::CompletePuzzle();
+				case "water": Water::CompletePuzzle();
+				case "room2": Rooms::CompletePuzzle();
+				case "turtle": Turtle::CompletePuzzle();
+				case "wordle": Wordle::CompletePuzzle();
+				case "tunnel": TunnelItem::CompletePuzzle();
+				case "controlroom": ControlRoom::CompletePuzzle();
+				case "badge": ControlRoom::CompleteBadge();
+			}
+    }
+		case "Command_additem": {
+			foreach (Player in Players) {
+				switch (Command.ValueText) {
+					case "water": {
+						Items::CreateHelmetItem(Player);
+						Items::CreatePowerSourceItem(Player);
+					}
+					case "powersource": Items::CreatePowerSourceItem(Player);
+					case "helmet": Items::CreateHelmetItem(Player);
+					case "letteru": Items::CreateLetterUItem(Player);
+					case "letteri": Items::CreateLetterIItem(Player);
+					case "letterl": Items::CreateLetterLItem(Player);
+					case "lettern": Items::CreateLetterNItem(Player);
+					case "orb": Items::CreateOrbItem(Player);
+					case "key": Items::CreateKeyItem(Player);
+					case "badge": Items::CreateBadgeItem(Player);
+				}
 			}
 		}
-	}
+  }
 }
 
+Rooms::Loop();
 EnergyWall::Loop();
 XPuzzle::Loop();
 Inventory::Loop();
 Simon::Loop();
 Pipe::Loop();
+Water::Loop();
+Turtle::Loop();
+TunnelMedia::Loop();
+TunnelItem::Loop();
+Wordle::Loop();
+ControlRoom::Loop();
+Challenge::Loop();
+
+foreach (Player => HasRequest in RoomsRequestRespawn::GetRequests()) {
+	if (HasRequest) {
+		OnRespawn(Player);
+	}
+}
+RoomsRequestRespawn::Reset();
 ***
+
+
+***MB_Private_Yield***
+***
+ModeCommands::Yield();
+***
+
 
 Void DoNothing() {}

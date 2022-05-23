@@ -1,0 +1,14 @@
+
+declare Boolean[CSmPlayer] G_RequestRespawns;
+
+Void RequestRespawn(CSmPlayer Player) {
+	G_RequestRespawns[Player] = True;
+}
+
+Void Reset() {
+	G_RequestRespawns.clear();
+}
+
+Boolean[CSmPlayer] GetRequests() {
+	return G_RequestRespawns;
+}

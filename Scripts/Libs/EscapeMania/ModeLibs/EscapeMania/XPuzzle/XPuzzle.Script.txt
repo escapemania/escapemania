@@ -17,7 +17,6 @@ Void Init() {
 	}
 }
 
-
 Boolean IsPuzzleComplete() {
 	foreach (Landmark in MapLandmarks) {
 		if (Landmark.Tag == C_DropSuccessLandmarkTag) {
@@ -30,12 +29,10 @@ Boolean IsPuzzleComplete() {
 }
 
 Void CompletePuzzle() {
-	// Destroy Orb Items
-	foreach (Landmark in MapLandmarks) {
-		foreach (Pickup in VirtualPickups::GetByHolder(Landmark)) {
-			if (Items::IsOrbItem(Pickup)) {
-				VirtualPickups::Destroy(Pickup.Id);
-			}
+	// Destroy Orb Items and Helmet Items
+	foreach (Pickup in VirtualPickups::GetAll()) {
+		if (Items::IsOrbItem(Pickup) || Items::IsHelmetItem(Pickup)) {
+			VirtualPickups::Destroy(Pickup.Id);
 		}
 	}
 	

@@ -1,0 +1,91 @@
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Rooms/RoomsRequestRespawn.Script.txt" as RoomsRequestRespawn
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Turtle/Turtle.Script.txt" as Turtle
+
+#Const C_TunnelTagPrefixRow "Tunnel_Row_"
+#Const C_TunnelTagPrefixColumn "Tunnel_Column_"
+#Const C_TunnelEntranceTag "Tunnel_Entrance"
+
+#Include "TextLib" as TL
+
+declare Text[CSmPlayer] G_PreviousMediaTracker;
+declare Text G_CurrentMediaTracker;
+declare CSmPlayer G_CurrentPlayer;
+
+Void OnEnterTest(CSmPlayer EnterPlayer, Text Tag) {
+	declare Text MediaTracker = TL::Replace(TL::Replace(Tag, "Tunnel_", ""), "_", " ");
+	G_CurrentMediaTracker = MediaTracker;
+	foreach (Player in Players) {
+		declare UI = UIManager.GetUI(Player);
+		G_PreviousMediaTracker[Player] = UI.UISequence_CustomMTClip;
+		if (Player != EnterPlayer) {
+			UI.UISequence_CustomMTClip = MediaTracker;
+		}
+		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
+	}
+}
+
+Void OnLeaveTest(CSmPlayer Player) {
+	if (G_CurrentMediaTracker == "" || Player != G_CurrentPlayer) {
+		return;
+	}
+	
+	foreach (Player in Players) {
+		declare UI = UIManager.GetUI(Player);
+		if (Player != G_CurrentPlayer) {
+			declare Text MediaTracker = G_PreviousMediaTracker.get(Player, "");
+			if (MediaTracker != "") {
+				UI.UISequence_CustomMTClip = MediaTracker;
+			}
+			G_PreviousMediaTracker[Player] = "";
+		}
+	}
+	
+	G_CurrentMediaTracker = "";
+}
+
+Void OnRespawn(CSmPlayer Player) {
+	if (Player != G_CurrentPlayer) {
+		return;
+	}
+	G_CurrentPlayer = Null;
+	OnLeaveTest(Player);
+}
+
+Void OnEnterTunnel(CSmPlayer Player) {
+	if (!Turtle::IsComplete()) {	
+		RoomsRequestRespawn::RequestRespawn(Player);
+		declare UI = UIManager.GetUI(Player);
+		UI.QueueMessage(3000, 1, CUIConfig::EMessageDisplay::Big, "");
+		return;
+	} else if (G_CurrentPlayer != Null) {
+		RoomsRequestRespawn::RequestRespawn(Player);
+		declare UI = UIManager.GetUI(Player);
+		UI.QueueMessage(3000, 1, CUIConfig::EMessageDisplay::Big, " ");
+	}
+	
+	G_CurrentPlayer = Player;
+}
+
+Void Init() {
+	G_CurrentMediaTracker = "";
+	G_CurrentPlayer = Null;
+}
+
+Void Loop() {
+	foreach (Event in PendingEvents) {
+		switch (Event.Type) {
+			case CSmModeEvent::EType::OnPlayerTriggersWaypoint: {
+				if (
+					TL::StartsWith(C_TunnelTagPrefixRow, Event.Landmark.Tag) ||
+					TL::StartsWith(C_TunnelTagPrefixColumn, Event.Landmark.Tag)
+				) {
+					OnEnterTest(Event.Player, Event.Landmark.Tag);
+				} else if (Event.Landmark.Tag == C_TunnelEntranceTag) {
+					OnEnterTunnel(Event.Player);
+				} else {
+					OnLeaveTest(Event.Player);
+				}
+			}
+		}
+	}
+}

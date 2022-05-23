@@ -1,0 +1,80 @@
+
+#Const C_TestLandmarkTag "Turtle_Test"
+#Const C_MediaTracker "Turtle"
+
+declare Boolean[CSmPlayer] G_InTurtle;
+declare Boolean G_IsComplete;
+
+Void CompletePuzzle() {
+	G_IsComplete = True;
+	
+	// Tell players something is happening
+	foreach (Player in Players) {
+		declare UI = UIManager.GetUI(Player);
+		UI.UISequence_CustomMTClip = C_MediaTracker;
+		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
+	}
+}
+
+Boolean IsComplete() {
+	return G_IsComplete;
+}
+
+Void OnEnterTest(CSmPlayer Player) {
+	if (G_IsComplete) {
+		return;
+	}
+	
+	if (Player.UpDirection.Y < 0) {
+		G_InTurtle[Player] = True;
+	}
+	
+	declare Integer countInTurtle = 0;
+	foreach (Player => InTurtle in G_InTurtle) {
+		if (InTurtle) {
+			countInTurtle += 1;
+		}
+	}
+	
+	if (countInTurtle == 4) {
+		CompletePuzzle();
+	} else {
+		declare Text HintColor = "";
+		if (G_InTurtle.get(Player, False)) {
+			HintColor = "$2f0";
+		}
+		declare UI = UIManager.GetUI(Player);
+		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, HintColor ^ "");
+	}
+}
+
+Void OnLeaveTest(CSmPlayer Player) {
+	G_InTurtle[Player] = False;
+}
+
+Void OnRespawn(CSmPlayer Player) {
+	OnLeaveTest(Player);
+	
+	if (G_IsComplete) {
+		declare UI = UIManager.GetUI(Player);
+		UI.UISequence_CustomMTClip = C_MediaTracker;
+	}
+}
+
+Void Init() {
+	G_IsComplete = False;
+}
+
+Void Loop() {
+	foreach (Event in PendingEvents) {
+		switch (Event.Type) {
+			case CSmModeEvent::EType::OnPlayerTriggersWaypoint: {
+				if (Event.Landmark.Tag == C_TestLandmarkTag) {
+					OnEnterTest(Event.Player);
+				} else {
+					OnLeaveTest(Event.Player);
+				}
+			}
+		}
+	}
+}
