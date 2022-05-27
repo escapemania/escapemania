@@ -1,5 +1,6 @@
 #Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/VirtualPickups.Script.txt" as VirtualPickups
 #Include "Libs/EscapeMania/ModeLibs/EscapeMania/Items/Items.Script.txt" as Items
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Simon/Simon.Script.txt" as Simon
 
 #Include "TextLib" as TL
 
@@ -30,6 +31,17 @@ Boolean IsPuzzleComplete() {
 		}
 	}
 	return True;
+}
+
+Void ResetPuzzle() {
+	// Destroy Letter Items & Power Source Items
+	foreach (Pickup in VirtualPickups::GetAll()) {
+		if (Items::IsLetterItem(Pickup) || Items::IsPowerSourceItem(Pickup)) {
+			VirtualPickups::Destroy(Pickup.Id);
+		}
+	}
+	
+	Simon::CreateItems();
 }
 
 Void CompletePuzzle() {

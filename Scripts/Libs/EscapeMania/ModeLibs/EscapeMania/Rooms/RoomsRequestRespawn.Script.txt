@@ -1,14 +1,25 @@
 
 declare Boolean[CSmPlayer] G_RequestRespawns;
+declare CMapLandmark[CSmPlayer] G_RequestRespawnsLocation;
 
 Void RequestRespawn(CSmPlayer Player) {
 	G_RequestRespawns[Player] = True;
 }
 
+Void RequestRespawnAtLocation(CSmPlayer Player, CMapLandmark Landmark) {
+	G_RequestRespawns[Player] = True;
+	G_RequestRespawnsLocation[Player] = Landmark;
+}
+
 Void Reset() {
 	G_RequestRespawns.clear();
+	G_RequestRespawnsLocation.clear();
 }
 
 Boolean[CSmPlayer] GetRequests() {
 	return G_RequestRespawns;
+}
+
+CMapLandmark[CSmPlayer] GetRequestsLocation() {
+	return G_RequestRespawnsLocation;
 }

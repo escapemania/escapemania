@@ -1,9 +1,13 @@
 #Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/VirtualPickups.Script.txt" as VirtualPickups
 #Include "Libs/EscapeMania/ModeLibs/EscapeMania/Items/Items.Script.txt" as Items
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Rooms/RoomsRequestRespawn.Script.txt" as RoomsRequestRespawn
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/MediaTracker/MediaTracker.Script.txt" as MediaTracker
 
 #Const C_WaterEntranceTag "Water_Entrance"
+#Const C_WaterEndTag "Water_End"
 #Const C_BottleLandmarkTag "Water_Item"
 #Const C_MediaTrackerClip "Water"
+#Const C_MediaTrackerPriority 2
 
 declare Boolean[CSmPlayer] G_InWater;
 declare Boolean G_IsComplete;
@@ -12,7 +16,31 @@ Void Init() {
 	G_IsComplete = False;
 }
 
+Void ResetPuzzle() {
+	Init();
+	// Destroy Bottle Items
+	foreach (Pickup in VirtualPickups::GetAll()) {
+		if (Items::IsBottleItem(Pickup)) {
+			VirtualPickups::Destroy(Pickup.Id);
+		}
+	}
+	
+	foreach (Player => InWater in G_InWater) {
+		MediaTracker::UnsetMediaTracker(Player, C_MediaTrackerPriority);
+		G_InWater[Player] = False;
+	}
+}
+
 Void CompletePuzzle() {
+	// G_IsComplete is only set to True when one player picks up the bottle item
+	
+	// Destroy Bottle Items
+	foreach (Pickup in VirtualPickups::GetAll()) {
+		if (Items::IsBottleItem(Pickup)) {
+			VirtualPickups::Destroy(Pickup.Id);
+		}
+	}
+	
 	// Create Bottle Item
 	foreach (Landmark in MapLandmarks) {
 		if (Landmark.Tag == C_BottleLandmarkTag) {
@@ -58,16 +86,7 @@ Void OnChange(CSmPlayer Player, Boolean GoesInside) {
 	}
 }
 
-Void OnRespawn(CSmPlayer Player) {
-	if (G_InWater.get(Player, False)) {
-		declare UI = UIManager.GetUI(Player);
-		UI.UISequence_CustomMTClip = "";
-	}
-	G_InWater[Player] = False;
-	OnChange(Player, False);
-}
-
-Void OnEnterWater(CSmPlayer Player) {
+Boolean CanBreath(CSmPlayer Player) {
 	declare Boolean HasHelmet = False;
 	declare Boolean HasPowerSource = False;
 	foreach (Pickup in VirtualPickups::GetByHolder(Player)) {
@@ -78,11 +97,29 @@ Void OnEnterWater(CSmPlayer Player) {
 			HasPowerSource = True;
 		}
 	}
-	if (!(HasHelmet && HasPowerSource)) {
-		declare UI = UIManager.GetUI(Player);
-		UI.UISequence_CustomMTClip = C_MediaTrackerClip;
-	}
+	return HasHelmet && HasPowerSource;
+}
 
+Void OnWaterEnd(CSmPlayer Player) {
+	if (!CanBreath(Player) && G_InWater.get(Player, False)) {
+		RoomsRequestRespawn::RequestRespawn(Player);
+		declare UI = UIManager.GetUI(Player);
+		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
+	}
+}
+
+Void OnRespawn(CSmPlayer Player) {
+	if (G_InWater.get(Player, False)) {
+		MediaTracker::UnsetMediaTracker(Player, C_MediaTrackerPriority);
+		G_InWater[Player] = False;
+		OnChange(Player, False);
+	}
+}
+
+Void OnEnterWater(CSmPlayer Player) {
+	if (!CanBreath(Player)) {
+		MediaTracker::SetMediaTracker(Player, C_MediaTrackerClip, C_MediaTrackerPriority);
+	}
 	G_InWater[Player] = True;
 	OnChange(Player, True);
 }
@@ -93,6 +130,8 @@ Void Loop() {
 			case CSmModeEvent::EType::OnPlayerTriggersWaypoint: {
 				if (Event.Landmark.Tag == C_WaterEntranceTag) {
 					OnEnterWater(Event.Player);
+				} else if (Event.Landmark.Tag == C_WaterEndTag) {
+					OnWaterEnd(Event.Player);
 				} else if (Event.Landmark.Tag == C_BottleLandmarkTag) {
 					// Pickup
 					declare VirtualPickups::K_VirtualPickup[] LandmarkPickups = VirtualPickups::GetByHolder(Event.Landmark);
@@ -100,7 +139,7 @@ Void Loop() {
 						declare VirtualPickups::K_VirtualPickup Pickup = LandmarkPickups[0];
 						if (Items::IsBottleItem(Pickup)) {
 							VirtualPickups::SetHolder(Pickup.Id, Event.Player);
-							G_IsComplete = True;			
+							G_IsComplete = True;
 						}
 					}
 				}

@@ -1,0 +1,83 @@
+#Include "TextLib" as TL
+
+declare Integer G_Start;
+declare Integer G_Finish;
+
+Void Start() {
+	if (G_Start == 0) {
+		G_Start = Now;
+	}
+}
+
+Void Stop() {
+	if (G_Finish == 0) {
+		G_Finish = Now;
+	}
+}
+
+Void Init() {
+	G_Start = 0;
+	G_Finish = 0;
+}
+
+Void ResetPuzzle() {
+	Init();
+}
+
+Text Pad0(Integer Int) {
+	declare Text Str = "" ^ Int;
+	if (TL::Length(Str) == 1) {
+		return "0" ^ Str;
+	}
+	return Str;
+}
+
+Void Loop() {
+	declare Text Output = "";
+	if (G_Start > 0) {
+		declare Current = Now;
+		if (G_Finish != 0) {
+			Current = G_Finish;
+		}
+		declare Integer Elapsed = (Current - G_Start) / 1000;
+		declare Integer Hours = Elapsed / 3600;
+		Elapsed = Elapsed - Hours * 3600;
+		declare Integer Minutes = Elapsed / 60;
+		Elapsed = Elapsed - Minutes * 60;
+		declare Integer Seconds = Elapsed;
+		Output = Pad0(Minutes) ^ ":" ^ Pad0(Seconds);
+		if (Hours > 0) {
+			Output = Pad0(Hours) ^ ":" ^ Output;
+		}
+	}
+	
+	foreach (Player in Players) {
+		declare netwrite Text TimerText for Player;
+		TimerText = Output;
+	}
+}
+
+Text GetManialink() {
+	return """
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<manialink version="3" name="Timer">
+
+	<label z-index="1" text="" halign="center" textfont="GameFontBlack" textsize="10" valign="center2" pos="0 65" id="timer-label"/>
+
+	<script><!--
+	main() {
+		declare CMlLabel Label = (Page.GetFirstChild("timer-label") as CMlLabel);
+		
+		while (True) {
+			yield;
+			
+			if (GUIPlayer != Null) {
+				declare netread Text TimerText for GUIPlayer;
+				Label.Value = TimerText;
+			}
+		}
+	}
+	--></script>
+</manialink>
+	""";
+}

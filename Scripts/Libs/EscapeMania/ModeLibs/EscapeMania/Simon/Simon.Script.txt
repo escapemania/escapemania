@@ -21,6 +21,22 @@
 
 declare Integer G_CurrentStep;
 
+
+Void Init() {
+	G_CurrentStep = 0;
+}
+
+Void ResetPuzzle() {
+	// Destroy Letter Items
+	foreach (Pickup in VirtualPickups::GetAll()) {
+		if (Items::IsLetterItem(Pickup)) {
+			VirtualPickups::Destroy(Pickup.Id);
+		}
+	}
+
+	Init();
+}
+
 Boolean IsCorrect(Integer step, Text landmark) {
 	return (
 		step == 0 && landmark == C_Blue ||
@@ -51,14 +67,7 @@ Void DisplayHint(Text hintColor, CSmPlayer player) {
 	UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, hintColor ^ "");
 }
 
-Void CompletePuzzle() {
-	// Destroy Letter Items
-	foreach (Pickup in VirtualPickups::GetAll()) {
-		if (Items::IsLetterItem(Pickup)) {
-			VirtualPickups::Destroy(Pickup.Id);
-		}
-	}
-
+Void CreateItems() {
 	// Create Letter Items
 	foreach (Landmark in MapLandmarks) {
 		if (Landmark.Tag == C_LetterULandmarkTag) {
@@ -71,7 +80,20 @@ Void CompletePuzzle() {
 			Items::CreateLetterNItem(Landmark);
 		}
 	}
-	
+}
+
+Void CompletePuzzle() {
+	G_CurrentStep = 8;
+
+	// Destroy Letter Items
+	foreach (Pickup in VirtualPickups::GetAll()) {
+		if (Items::IsLetterItem(Pickup)) {
+			VirtualPickups::Destroy(Pickup.Id);
+		}
+	}
+
+	CreateItems();
+
 	// Tell all the players something happened!
 	foreach (Player in Players) {
 		declare UI = UIManager.GetUI(Player);
@@ -108,9 +130,4 @@ Void Loop() {
 		}
 	}
 }
-
-Void Init() {
-	G_CurrentStep = 0;
-}
-
 

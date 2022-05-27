@@ -4,6 +4,8 @@
 
 #Include "Libs/EscapeMania/ModeLibs/EscapeMania/Rooms/Rooms.Script.txt" as Rooms
 #Include "Libs/EscapeMania/ModeLibs/EscapeMania/Rooms/RoomsRequestRespawn.Script.txt" as RoomsRequestRespawn
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Timer/Timer.Script.txt" as Timer
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/MediaTracker/MediaTracker.Script.txt" as MediaTracker
 
 #Include "Libs/EscapeMania/ModeLibs/EscapeMania/EnergyWall/EnergyWall.Script.txt" as EnergyWall
 #Include "Libs/EscapeMania/ModeLibs/EscapeMania/XPuzzle/XPuzzle.Script.txt" as XPuzzle
@@ -31,11 +33,14 @@
 
 #Const C_Layer_Inventory "Layer_Inventory"
 #Const C_LayerName_ModeCommands "Layer_ModeCommands"
+#Const C_LayerName_Timer "Layer_Timer"
 
 ***Match_StartServer***
 ***
 Race::UseCppRaceProgression(False);
-UIManager.UIAll.PlayerDisableFreeCam = True;
+
+UsePvPCollisions = True;
+UsePvECollisions = True;
 
 Layers::Create(C_Layer_Inventory, Inventory::GetManialink());
 Layers::SetType(C_Layer_Inventory, CUILayer::EUILayerType::Normal);
@@ -46,7 +51,9 @@ Layers::Create(C_LayerName_ModeCommands, ModeCommands::GetManialink());
 Layers::SetType(C_LayerName_ModeCommands, CUILayer::EUILayerType::Normal);
 Layers::Attach(C_LayerName_ModeCommands);
 
-Challenge::OnStartServer();
+Layers::Create(C_LayerName_Timer, Timer::GetManialink());
+Layers::SetType(C_LayerName_Timer, CUILayer::EUILayerType::Normal);
+Layers::Attach(C_LayerName_Timer);
 ***
 
 ***Match_StartMap***
@@ -56,6 +63,7 @@ Rooms::OnStartMap();
 
 ***Match_StartPlayLoop***
 ***
+Timer::Init();
 Items::Init();
 EnergyWall::Init();
 XPuzzle::Init();
@@ -69,23 +77,47 @@ ControlRoom::Init();
 Challenge::Init();
 ***
 
-Void OnRespawn(CSmPlayer Player) {
+Void OnRespawn(CSmPlayer Player, CMapLandmark Location) {
 	Water::OnRespawn(Player);
 	EnergyWall::OnRespawn(Player);
-	Rooms::OnRespawn(Player);
+	Rooms::OnRespawn(Player, Location);
 	Turtle::OnRespawn(Player);
 	Wordle::OnRespawn(Player);
 	TunnelMedia::OnRespawn(Player);
 	TunnelItem::OnRespawn(Player);
-	Challenge::OnRespawn(Player);
+	Challenge::OnRespawn(Player, Location);
+	MediaTracker::OnRespawn(Player);
+}
+
+Void OnPlayerSpawn(CSmPlayer Player) {
+	Rooms::OnPlayerSpawn(Player);
+	EnergyWall::OnPlayerSpawn(Player);
 }
 
 ***Match_PlayLoop***
 ***
+foreach (Player in Players) {
+	if (Player.SpawnStatus == CSmPlayer::ESpawnStatus::NotSpawned) {
+		OnPlayerSpawn(Player);
+	}
+}
+
 foreach (Event in PendingEvents) {
 	switch (Event.Type) {
 		case CSmModeEvent::EType::OnPlayerRequestRespawn: {
-			OnRespawn(Event.Player);
+			OnRespawn(Event.Player, Null);
+		}
+		case CSmModeEvent::EType::OnPlayerAdded: {	
+			foreach (Player in Players) {
+				declare UI = UIManager.GetUI(Player);
+				UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Chat, Player.User.Name ^ " joined the Escape!");
+			}
+		}
+		case CSmModeEvent::EType::OnPlayerRemoved: {
+			foreach (Player in Players) {
+				declare UI = UIManager.GetUI(Player);
+				UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Chat, Player.User.Name ^ " left the Escape!");
+			}
 		}
 	}
 }
@@ -99,12 +131,35 @@ foreach (Command in ModeCommands::GetPendingCommands()) {
 				case "energy": EnergyWall::CompletePuzzle();
 				case "simon": Simon::CompletePuzzle();
 				case "water": Water::CompletePuzzle();
-				case "room2": Rooms::CompletePuzzle();
+				case "room1": foreach (Player in Players) Rooms::EnterRoom(Player, 1);
+				case "room2": foreach (Player in Players) Rooms::EnterRoom(Player, 2);
 				case "turtle": Turtle::CompletePuzzle();
 				case "wordle": Wordle::CompletePuzzle();
 				case "tunnel": TunnelItem::CompletePuzzle();
 				case "controlroom": ControlRoom::CompletePuzzle();
 				case "badge": ControlRoom::CompleteBadge();
+				case "challenge": Challenge::CompletePuzzle();
+			}
+    }
+    case "Command_reset": {
+			switch (Command.ValueText) {
+				case "x": XPuzzle::ResetPuzzle();
+				case "pipe": Pipe::ResetPuzzle();
+				case "energy": EnergyWall::ResetPuzzle();
+				case "simon": Simon::ResetPuzzle();
+				case "water": Water::ResetPuzzle();
+				case "room1": Rooms::ResetPuzzle(0);
+				case "room2": Rooms::ResetPuzzle(1);
+				case "turtle": Turtle::ResetPuzzle();
+				case "wordle": Wordle::ResetPuzzle();
+				case "tunnel": TunnelItem::ResetPuzzle();
+				case "controlroom": ControlRoom::ResetPuzzle();
+				case "badge": ControlRoom::ResetBadge();
+				case "challenge": Challenge::ResetPuzzle();
+				case "timer": Timer::ResetPuzzle();
+			}
+			foreach (Player in Players) {
+				RoomsRequestRespawn::RequestRespawn(Player);
 			}
     }
 		case "Command_additem": {
@@ -121,6 +176,7 @@ foreach (Command in ModeCommands::GetPendingCommands()) {
 					case "letterl": Items::CreateLetterLItem(Player);
 					case "lettern": Items::CreateLetterNItem(Player);
 					case "orb": Items::CreateOrbItem(Player);
+					case "bottle": Items::CreateBottleItem(Player);
 					case "key": Items::CreateKeyItem(Player);
 					case "badge": Items::CreateBadgeItem(Player);
 				}
@@ -129,6 +185,8 @@ foreach (Command in ModeCommands::GetPendingCommands()) {
   }
 }
 
+Timer::Loop();
+Items::Loop();
 Rooms::Loop();
 EnergyWall::Loop();
 XPuzzle::Loop();
@@ -145,7 +203,7 @@ Challenge::Loop();
 
 foreach (Player => HasRequest in RoomsRequestRespawn::GetRequests()) {
 	if (HasRequest) {
-		OnRespawn(Player);
+		OnRespawn(Player, RoomsRequestRespawn::GetRequestsLocation().get(Player, Null));
 	}
 }
 RoomsRequestRespawn::Reset();

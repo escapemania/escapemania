@@ -1,0 +1,75 @@
+
+#Struct K_MediaTrackerPriority {
+	Text MediaTracker;
+	Integer Priority;
+}
+
+#Struct K_MediaTrackerPriorities {
+	K_MediaTrackerPriority[] Items;
+}
+
+declare K_MediaTrackerPriorities[CSmPlayer] G_MediaTrackers;
+
+Void ApplyMediaTracker(CSmPlayer Player) {
+	if (!G_MediaTrackers.existskey(Player)) {
+		G_MediaTrackers[Player] = K_MediaTrackerPriorities { Items = [] };
+	}
+
+	declare Integer MaxPriority = -1;
+	declare Text MaxMediaTracker = "";
+	
+	foreach (Item in G_MediaTrackers[Player].Items) {
+		if (Item.Priority > MaxPriority) {
+			MaxPriority = Item.Priority;
+			MaxMediaTracker = Item.MediaTracker;
+		}
+	}
+	
+	declare UI = UIManager.GetUI(Player);
+	UI.UISequence = CUIConfig::EUISequence::CustomMTClip;
+	UI.UISequence_CustomMTClip = MaxMediaTracker;
+}
+
+Void RemoveWithPriority(CSmPlayer Player, Integer Priority) {
+	if (!G_MediaTrackers.existskey(Player)) {
+		G_MediaTrackers[Player] = K_MediaTrackerPriorities { Items = [] };
+	}
+
+	declare Integer IndexToRemove = -1;
+	declare Integer i = 0;
+	foreach (Item in G_MediaTrackers[Player].Items) {
+		if (Item.Priority == Priority) {
+			IndexToRemove = i;
+			break;
+		}
+		i += 1;
+	}
+
+	if (IndexToRemove != -1) {
+		G_MediaTrackers[Player].Items.removekey(IndexToRemove);
+	}
+}
+
+Void SetMediaTracker(CSmPlayer Player, Text MediaTracker, Integer Priority) {
+	if (!G_MediaTrackers.existskey(Player)) {
+		G_MediaTrackers[Player] = K_MediaTrackerPriorities { Items = [] };
+	}
+	
+	RemoveWithPriority(Player, Priority);
+	declare K_MediaTrackerPriority Item = K_MediaTrackerPriority { MediaTracker = MediaTracker, Priority = Priority };
+	G_MediaTrackers[Player].Items.add(Item);
+	ApplyMediaTracker(Player);
+}
+
+Void UnsetMediaTracker(CSmPlayer Player, Integer Priority) {
+	if (!G_MediaTrackers.existskey(Player)) {
+		G_MediaTrackers[Player] = K_MediaTrackerPriorities { Items = [] };
+	}
+
+	RemoveWithPriority(Player, Priority);
+	ApplyMediaTracker(Player);
+}
+
+Void OnRespawn(CSmPlayer Player) {
+	ApplyMediaTracker(Player);
+}

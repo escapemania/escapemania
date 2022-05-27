@@ -18,6 +18,20 @@ Boolean IsComplete() {
 	return G_IsComplete;
 }
 
+Void ResetPuzzle() {
+	foreach (Player => IsSuccess in G_IsSuccess) {
+		G_IsSuccess[Player] = 0;
+	}
+	G_IsComplete = False;
+
+	// Destroy Key Items
+	foreach (Pickup in VirtualPickups::GetAll()) {
+		if (Items::IsKeyItem(Pickup)) {
+			VirtualPickups::Destroy(Pickup.Id);
+		}
+	}
+}
+
 Void CompletePuzzle() {
 	G_IsComplete = True;
 	

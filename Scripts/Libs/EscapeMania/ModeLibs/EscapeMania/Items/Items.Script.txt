@@ -14,7 +14,12 @@
 #Const C_KeyItemType "Key"
 #Const C_BadgeItemType "Badge"
 
+#Struct K_Ids {
+	Text[] Ids;
+}
+
 declare Integer G_Item_Count;
+declare K_Ids[Text] G_SavedItems; 
 
 Void CreateItem(CNod Landmark, Text Type, Text Name, Text Description, Text Icon) {
 	G_Item_Count += 1;
@@ -41,14 +46,33 @@ Void Init() {
 	G_Item_Count = 0;
 }
 
+Void Loop() {
+	// Save & Restore
+	foreach (Event in PendingEvents) {
+		switch (Event.Type) {
+			case CSmModeEvent::EType::OnPlayerAdded: {	
+				foreach (Id in G_SavedItems.get(Event.Player.User.Login, K_Ids { Ids = [] }).Ids) {
+					VirtualPickups::SetHolder(Id, Event.Player);
+				}
+			}
+			case CSmModeEvent::EType::OnPlayerRemoved: {
+				foreach (Pickup in VirtualPickups::GetByHolder(Event.Player)) {
+					G_SavedItems[Event.Player.User.Login].Ids.add(Pickup.Id);
+					VirtualPickups::SetHolder(Pickup.Id, Null);
+				}
+			}
+		}
+	}
+}
+
 // ---------
 
 Void CreateOrbItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_OrbItemType,
-		"A glowing orb",
-		"It is attracted to round moving objects...",
+		"Boule de Feu\n$cccGlowing Orb",
+		"Etrangement attirée par des cerceaux tournants...\n\n$cccIt is attracted to round moving objects...",
 		"https://cdn.discordapp.com/attachments/929103899137310810/973034869439479888/x_item.png"
 	);
 }
@@ -61,8 +85,8 @@ Void CreateHelmetItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_HelmetItemType,
-		"Water Breathing Helmet",
-		"This strange helmet lets you breath under water when powered by a blue power source.",
+		"Casque de Respiration\n$cccWater Breathing Helmet",
+		"Ce casque magique vous permet de respirer sous l'eau lorsqu'il est alimenté par une source d'énergie bleue.\n\n$cccThis strange helmet lets you breath under water when powered by a blue power source.",
 		"https://cdn.discordapp.com/attachments/929103899137310810/977318149403836566/helmet_item.png"
 	);
 }
@@ -76,8 +100,8 @@ Void CreateLetterUItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_LetterU_ItemType,
-		"U Pipe",
-		"A thick U-shaped piece of pipe.",
+		"Tuyau en U\n$cccU Pipe",
+		"Un gros tuyau qui ressemble à la lettre U.\n\n$cccA thick U-shaped piece of pipe.",
 		"https://cdn.discordapp.com/attachments/929103899137310810/977341199046299668/letter_U_item.png"
 	);
 }
@@ -90,8 +114,8 @@ Void CreateLetterIItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_LetterI_ItemType,
-		"I Pipe",
-		"A thick I-shaped piece of pipe.",
+		"Tuyau en U\n$cccI Pipe",
+		"Un gros tuyau qui ressemble à la lettre I.\n\n$cccA thick I-shaped piece of pipe.",
 		"https://cdn.discordapp.com/attachments/929103899137310810/977341199289548830/letter_I_item.png"
 	);
 }
@@ -104,8 +128,8 @@ Void CreateLetterLItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_LetterL_ItemType,
-		"L Pipe",
-		"A thick L-shaped piece of pipe.",
+		"Tuyau en L\n$cccL Pipe",
+		"Un gros tuyau qui ressemble à la lettre L.\n\n$cccA thick L-shaped piece of pipe.",
 		"https://cdn.discordapp.com/attachments/929103899137310810/977341199503487016/letter_L_item.png"
 	);
 }
@@ -118,8 +142,8 @@ Void CreateLetterNItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_LetterN_ItemType,
-		"N Pipe",
-		"A thick N-shaped piece of pipe.",
+		"Tuyau en N\n$cccN Pipe",
+		"Un gros tuyau qui ressemble à la lettre N.\n\n$cccA thick N-shaped piece of pipe.",
 		"https://cdn.discordapp.com/attachments/929103899137310810/977341199725760523/letter_N_item.png"
 	);
 }
@@ -141,8 +165,8 @@ Void CreatePowerSourceItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_PowerSourceItemType,
-		"Blue Power Source",
-		"This blue power source activates magical objects.",
+		"Source d'Energie Bleue\n$cccBlue Power Source",
+		"Cette source d'énergie bleue active les pouvoirs d'objets magiques.\n\n$cccThis blue power source activates magical objects.",
 		"https://cdn.discordapp.com/attachments/929103899137310810/977363945834831913/powersource_item.png"
 	);
 }
@@ -155,8 +179,8 @@ Void CreateBottleItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_BottleItemType,
-		"Message in a Bottle",
-		"The orbs must be placed\nWhere darkness lies\nin straight lines\nfor corners to meet\n      -- Captain",
+		"Bouteille à la Mer\n$cccMessage in a Bottle",
+		"Les boules doivent être placées\ndans la pénombre\nen ligne droite\npour que les coins se rejoignent\n      -- Capitaine\n\n$cccThe orbs must be placed\nwhere darkness lies\nin straight lines\nfor corners to meet\n      -- Captain",
 		"https://cdn.discordapp.com/attachments/929103899137310810/977637638574075985/bottle_item.png"
 	);
 }
@@ -169,8 +193,8 @@ Void CreateKeyItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_KeyItemType,
-		"Red Key",
-		"Use this key in the control room to stop the ship. When the ship is stopped, the mechanism that enables earth-like gravity movement no longer works!",
+		"Clé Rouge\n$cccRed Key",
+		"Cette clé permet d'arrêter ce vaisseau dans la salle de contrôle. Quand le vaisseau est arrêté, le système qui génère une gravité terriène ne fonctionne plus.\n\n$cccUse this key in the control room to stop the ship. When the ship is stopped, the mechanism that enables earth-like gravity movement no longer works!",
 		"https://cdn.discordapp.com/attachments/929103899137310810/977724464211066970/key_item.png"
 	);
 }
@@ -183,8 +207,8 @@ Void CreateBadgeItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_BadgeItemType,
-		"Badge Jammer",
-		"This badge jams access control mechanisms it encounters.",
+		"Brouilleur\n$cccBadge Jammer",
+		"Ce brouilleur fait malfonctionner les contrôles d'accès.\n\n$cccThis badge jams access control mechanisms it encounters.",
 		"https://cdn.discordapp.com/attachments/929103899137310810/977724464412368926/badge_item.png"
 	);
 }

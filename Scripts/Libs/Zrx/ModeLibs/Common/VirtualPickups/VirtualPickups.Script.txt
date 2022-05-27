@@ -95,6 +95,10 @@ Void Private_ApplyMarkerConfig(Text Id) {
 		Marker.HudVisibility = Config.HudVisibility;
 		Marker.HideOnSelf = Config.HideOnSelf;
 		Marker.Gauge = Config.Gauge;
+		
+		switchtype(G_Pickups[Id].Holder) {
+			case CSmPlayer: Marker.HudVisibility = CUIConfigMarker::EHudVisibility::Never;
+		}
 	}
 }
 
@@ -264,9 +268,6 @@ Void SetHolder(Text Id, CNod Holder) {
 	if (NewMarker != Null) {
 		G_Markers[Id] = NewMarker;
 		Private_ApplyMarkerConfig(Id);
-		if (OnPlayer) {
-			NewMarker.HudVisibility = CUIConfigMarker::EHudVisibility::Never;
-		}
 	}
 }
 

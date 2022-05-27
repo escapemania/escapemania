@@ -18,6 +18,18 @@ Void CompleteBadge() {
 	}
 }
 
+Void ResetBadge() {
+	G_IsGateLocked = True;
+}
+
+Void ResetPuzzle() {
+	G_IsComplete = False;
+	
+	foreach (Player in Players) {
+		SetPlayer_Delayed_GravityCoef(Player, 1.0);
+	}
+}
+
 Void OnEntrance(CSmPlayer Player) {
 	if (G_IsGateLocked) {
 		foreach (Pickup in VirtualPickups::GetByHolder(Player)) {

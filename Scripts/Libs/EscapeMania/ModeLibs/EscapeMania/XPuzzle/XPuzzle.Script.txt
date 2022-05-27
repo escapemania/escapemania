@@ -17,6 +17,16 @@ Void Init() {
 	}
 }
 
+Void ResetPuzzle() {
+	// Destroy Orb Items and Helmet Items
+	foreach (Pickup in VirtualPickups::GetAll()) {
+		if (Items::IsOrbItem(Pickup) || Items::IsHelmetItem(Pickup)) {
+			VirtualPickups::Destroy(Pickup.Id);
+		}
+	}
+	Init();
+}
+
 Boolean IsPuzzleComplete() {
 	foreach (Landmark in MapLandmarks) {
 		if (Landmark.Tag == C_DropSuccessLandmarkTag) {

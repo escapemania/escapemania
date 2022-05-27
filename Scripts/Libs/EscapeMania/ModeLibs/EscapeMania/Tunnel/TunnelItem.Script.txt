@@ -18,6 +18,19 @@
 declare Integer[CSmPlayer] G_IsSuccess;
 declare Boolean G_IsComplete;
 
+Void ResetPuzzle() {
+	foreach (Player => Success in G_IsSuccess) {
+		G_IsSuccess[Player] = 0;
+	}
+	G_IsComplete = False;
+	// Destroy Badge Items
+	foreach (Pickup in VirtualPickups::GetAll()) {
+		if (Items::IsBadgeItem(Pickup)) {
+			VirtualPickups::Destroy(Pickup.Id);
+		}
+	}
+}
+
 Void CompletePuzzle() {
 	G_IsComplete = True;
 	
@@ -49,7 +62,6 @@ Void OnFailureTest(CSmPlayer Player, Text Tag) {
 		Tag == C_WordleTunnelFailureLandmarkTag && (!G_IsComplete || !Wordle::IsComplete())
 	) {		
 		declare UI = UIManager.GetUI(Player);
-		log("Failure");
 		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
 	}
 }

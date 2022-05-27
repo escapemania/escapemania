@@ -1,36 +1,43 @@
 
 #Include "Libs/EscapeMania/ModeLibs/EscapeMania/Challenge/Challenge.Script.txt" as Challenge
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Timer/Timer.Script.txt" as Timer
 
+#Const C_Room1LandmarkTag "Room1_Spawn"
 #Const C_Room2LandmarkTag "Room2_Spawn"
 
 declare CMapSpawn G_Spawn;
+declare CMapSpawn G_Room1Spawn;
 declare CMapSpawn G_Room2Spawn;
-declare CMapSpawn G_ChallengeSpawn;
 
-declare Boolean G_HasEnteredRoom2;
+declare Integer[CSmPlayer] G_CurrentRoom;
 
-declare CSmPlayer G_CurrentPlayer;
-
-
-Void Respawn(CSmPlayer Player) {
-	G_CurrentPlayer = Player;
+Void ResetPuzzle(Integer Room) {
+	foreach (Player in Players) {
+		G_CurrentRoom[Player] = Room;
+	}
+	UIManager.UIAll.PlayerDisableFreeCam = True;
 }
 
-Void CompletePuzzle() {
-	G_HasEnteredRoom2 = True;
+Void EnterRoom(CSmPlayer Player, Integer RoomNumber) {
+	G_CurrentRoom[Player] = RoomNumber;
 }
 
 Void OnStartMap() {
-	G_HasEnteredRoom2 = False;
+	foreach (Player in Players) {
+		G_CurrentRoom[Player] = 0;
+	}
 
+	UIManager.UIAll.PlayerDisableFreeCam = True;
+	
 	G_Spawn = Null;
+	G_Room1Spawn = Null;
 	G_Room2Spawn = Null;
 	foreach (Landmark in MapLandmarks) {
 		if (Landmark.Tag == "DevSpawn" || (Landmark.Tag == "Spawn" && G_Spawn == Null)) {
 			G_Spawn = Landmark.PlayerSpawn;
 		}
-		if (Landmark.Tag == "Challenge_Spawn") {
-			G_ChallengeSpawn = Landmark.PlayerSpawn;
+		if (Landmark.Tag == C_Room1LandmarkTag) {
+			G_Room1Spawn = Landmark.PlayerSpawn;
 		}
 		if (Landmark.Tag == C_Room2LandmarkTag) {
 			G_Room2Spawn = Landmark.PlayerSpawn;
@@ -38,34 +45,53 @@ Void OnStartMap() {
 	}
 }
 
-CMapSpawn GetSpawn() {
-	declare CMapSpawn Spawn;
-	if (G_HasEnteredRoom2) {
-		return G_Room2Spawn;
+Void OnFinish() {
+	foreach (Player in Players) {
+		G_CurrentRoom[Player] = 3;
+	}
+	Timer::Stop();
+	
+	foreach (Player in Players) {
+		declare UI = UIManager.GetUI(Player);
+		UI.QueueMessage(5000, 1, CUIConfig::EMessageDisplay::Big, "");
+		UIManager.UIAll.PlayerDisableFreeCam = False;
+	}
+}
+
+CMapSpawn GetSpawn(CSmPlayer Player) {
+	switch (G_CurrentRoom.get(Player, 0)) {
+		case 2: return G_Room2Spawn;
+		case 1: return G_Room1Spawn;
 	}
 	return G_Spawn;
 }
 
-Void OnRespawn(CSmPlayer Player) {
-	RespawnPlayer(Player, GetSpawn());
+Void OnRespawn(CSmPlayer Player, CMapLandmark Location) {
+	if (G_CurrentRoom[Player] != 3) {
+		if (Location != Null) {
+			RespawnPlayer(Player, Location.Waypoint);
+		} else {
+			RespawnPlayer(Player, GetSpawn(Player));
+		}
+	}
+}
+
+
+Void OnPlayerSpawn(CSmPlayer Player) {
+	SpawnPlayer(Player, Player.CurrentClan, 100, G_Spawn, Now);
 }
 
 Void Loop() {
-	foreach (Player in Players) {
-		if (Player.SpawnStatus == CSmPlayer::ESpawnStatus::NotSpawned) {
-			declare CMapSpawn Spawn = GetSpawn();
-			if (Player == Challenge::GetActivePlayer()) {
-				Spawn = G_ChallengeSpawn;
-			}
-			SpawnPlayer(Player, Player.CurrentClan, 100, Spawn, Now);
-		}
-	}
-
 	foreach (Event in PendingEvents) {
 		switch (Event.Type) {
 			case CSmModeEvent::EType::OnPlayerTriggersWaypoint: {
-				if (Event.Landmark.Tag == C_Room2LandmarkTag) {
-					CompletePuzzle();
+				if (Event.Landmark.Tag == C_Room1LandmarkTag) {
+					Timer::Start();
+					EnterRoom(Event.Player, 1);
+				} else if (Event.Landmark.Tag == C_Room2LandmarkTag) {
+					EnterRoom(Event.Player, 2);
+				} else if (Event.Landmark.Tag == "Goal") {
+					OnFinish();
 				}
 			}
 		}

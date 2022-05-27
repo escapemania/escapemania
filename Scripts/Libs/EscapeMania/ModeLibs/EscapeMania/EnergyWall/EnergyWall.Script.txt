@@ -1,33 +1,42 @@
 #Include "Libs/EscapeMania/ModeLibs/EscapeMania/Rooms/RoomsRequestRespawn.Script.txt" as RoomsRequestRespawn
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/MediaTracker/MediaTracker.Script.txt" as MediaTracker
 
 #Const C_LoopTriggerTag "LoopTrigger"
 #Const C_MediaTrackerClipPrefix "Wall "
 #Const C_DeathTriggerTag "EnergyWallDeathTrigger"
+#Const C_MediaTrackerPriority 1
+
+#Include "TextLib" as TL
 
 declare Integer G_WallState;
 
 Void Init() {
 	G_WallState = 10;
+}
+
+Void OnPlayerSpawn(CSmPlayer Player) {
+	MediaTracker::SetMediaTracker(Player, C_MediaTrackerClipPrefix ^ G_WallState, C_MediaTrackerPriority);
+}
+
+Void ResetPuzzle() {
+	G_WallState = 10;
 	foreach (Player in Players) {
-		declare UI = UIManager.GetUI(Player);
-		UI.UISequence = CUIConfig::EUISequence::CustomMTClip;
-		UI.UISequence_CustomMTClip = C_MediaTrackerClipPrefix ^ G_WallState;
+		MediaTracker::SetMediaTracker(Player, C_MediaTrackerClipPrefix ^ G_WallState, C_MediaTrackerPriority);
 	}
 }
 
 Void CompletePuzzle() {
 	G_WallState = 0;
 	foreach (Player in Players) {
+		MediaTracker::SetMediaTracker(Player, C_MediaTrackerClipPrefix ^ G_WallState, C_MediaTrackerPriority);
 		declare UI = UIManager.GetUI(Player);
-		UI.UISequence_CustomMTClip = C_MediaTrackerClipPrefix ^ G_WallState;
 		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
 	}
 }
 
 Void OnRespawn(CSmPlayer Player) {
-	if (G_WallState > 0) {
-		declare UI = UIManager.GetUI(Player);
-		UI.UISequence_CustomMTClip = C_MediaTrackerClipPrefix ^ G_WallState;
+	if (G_WallState == 0) {
+		MediaTracker::UnsetMediaTracker(Player, C_MediaTrackerPriority);
 	}
 }
 
@@ -42,8 +51,8 @@ Void LowerWall() {
 
 		if (G_WallState > 0) {
 			foreach (Player in Players) {
+				MediaTracker::SetMediaTracker(Player, C_MediaTrackerClipPrefix ^ G_WallState, C_MediaTrackerPriority);
 				declare UI = UIManager.GetUI(Player);
-				UI.UISequence_CustomMTClip = C_MediaTrackerClipPrefix ^ G_WallState;
 				UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
 			}
 		}

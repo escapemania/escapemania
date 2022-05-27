@@ -1,34 +1,48 @@
 #Include "Libs/EscapeMania/ModeLibs/EscapeMania/Rooms/RoomsRequestRespawn.Script.txt" as RoomsRequestRespawn
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/MediaTracker/MediaTracker.Script.txt" as MediaTracker
 
 #Const C_EntranceLandmarkTag "Challenge_Start"
 #Const C_SpawnLandmarkTag "Challenge_Spawn"
 #Const C_EndLandmarkTag "Challenge_End"
+#Const C_MediaTrackerObserver "Challenge Cam"
+#Const C_MediaTrackerPlayer "Challenge Blindfold"
+#Const C_MediaTrackerPriority 5
 
-declare Ident G_CharacterPilotItemIdent;
 declare CSmPlayer G_CurrentPlayer;
 declare Boolean G_IsComplete;
+declare CMapLandmark G_SpawnLocation;
 
-Void OnStartServer() {
-	ItemList_Begin();
-	G_CharacterPilotItemIdent = ItemList_Add("CharacterPilot");
-	ItemList_End();
+Void ResetMediaTrackers() {
+	foreach (Player in Players) {
+		MediaTracker::UnsetMediaTracker(Player, C_MediaTrackerPriority);
+	}
 }
 
-CSmPlayer GetActivePlayer() {
-	return G_CurrentPlayer;
+Void ResetPuzzle() {
+	G_IsComplete = False;
+	ResetMediaTrackers();
+}
+
+Void CompletePuzzle() {
+	G_IsComplete = True;
+	ResetMediaTrackers();
+	G_CurrentPlayer = Null;
 }
 
 Void OnEnd(CSmPlayer Player) {
-	
+	ResetMediaTrackers();
+	CompletePuzzle();
 }
 
 Void OnLeave(CSmPlayer Player) {
 	G_CurrentPlayer = Null;
-	Player.ForceModelId = NullId;
-	UnspawnPlayer(Player);
+	ResetMediaTrackers();
 }
 
 Void OnEntrance(CSmPlayer Player) {
+	if (G_IsComplete) {
+		return;
+	}
 	if (G_CurrentPlayer == Player) {
 		OnLeave(Player);
 		return;
@@ -40,22 +54,33 @@ Void OnEntrance(CSmPlayer Player) {
 		UI.QueueMessage(3000, 1, CUIConfig::EMessageDisplay::Big, " ");
 		return;
 	}
-	
+
 	G_CurrentPlayer = Player;
-	Player.ForceModelId = G_CharacterPilotItemIdent;
-	UnspawnPlayer(Player);
+	RoomsRequestRespawn::RequestRespawnAtLocation(Player, G_SpawnLocation);
+	MediaTracker::SetMediaTracker(Player, C_MediaTrackerPlayer, C_MediaTrackerPriority);
+	foreach (OtherPlayer in Players) {
+		if (OtherPlayer != Player) {
+			RoomsRequestRespawn::RequestRespawn(OtherPlayer);
+			MediaTracker::SetMediaTracker(OtherPlayer, C_MediaTrackerObserver, C_MediaTrackerPriority);
+		}
+	}
 }
 
-Void OnRespawn(CSmPlayer Player) {
-	if (Player != G_CurrentPlayer) {
-		return;
+Void OnRespawn(CSmPlayer Player, CMapLandmark Location) {
+	if (Player == G_CurrentPlayer && Location != G_SpawnLocation) {
+		OnLeave(Player);
 	}
-	OnLeave(Player);
 }
 
 Void Init() {
 	G_CurrentPlayer = Null;
 	G_IsComplete = False;
+	
+	foreach (Landmark in MapLandmarks) {
+		if (Landmark.Tag == C_SpawnLandmarkTag) {
+			G_SpawnLocation = Landmark;
+		}
+	}
 }
 
 Void Loop() {

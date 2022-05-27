@@ -7,7 +7,7 @@
 #Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/VirtualPickups.Script.txt" as VirtualPickups
 
 #Const C_SlotOpacity 0.1
-#Const C_TooltipOpacity 0.4
+#Const C_TooltipOpacity 0.8
 
 #Const C_ControlId_ItemSlotPrefix "slot-"
 
@@ -141,13 +141,13 @@ Text GetManialink() {
 
 	<frame id="tooltip" z-index="2" hidden="1">
 		<frame id="title">
-			<quad  z-index="0" size="60 10" opacity="{{{ C_TooltipOpacity }}}" halign="left" valign="top" bgcolor="000" pos="0 0"/>
-			<label  z-index="1" size="58 8" text="Item name" halign="center" textfont="GameFontBlack" textsize="3" valign="center2" pos="30 -5" id="title-label"/>
+			<quad z-index="0" size="60 14" opacity="{{{ C_TooltipOpacity }}}" halign="left" valign="top" bgcolor="000" pos="0 0"/>
+			<label z-index="1" size="58 12" text="Item name" halign="center" textfont="GameFontBlack" textsize="3" valign="center2" pos="30 -5" id="title-label"/>
 		</frame>
-		<quad pos="0 -10" z-index="0" size="60 1" bgcolor="FFF" id="divider" halign="left" valign="top"/>
+		<quad pos="0 -14" z-index="0" size="60 1" bgcolor="FFF" id="divider" halign="left" valign="top"/>
 		<frame id="description">
-			<quad  z-index="0" size="60 10" opacity="{{{ C_TooltipOpacity }}}" halign="left" valign="top" bgcolor="000" pos="0 -11" id="description-background"/>
-			<label pos="1 -13" z-index="1" size="58 8" text="Some item description" halign="left" valign="top" style="GameFontRegular" autonewline="1" textsize="2" id="description-label"/>
+			<quad z-index="0" size="60 10" opacity="{{{ C_TooltipOpacity }}}" halign="left" valign="top" bgcolor="000" pos="0 -15" id="description-background"/>
+			<label pos="1 -16" z-index="1" size="58 8" text="Some item description" halign="left" valign="top" style="GameFontRegular" autonewline="1" textsize="2" id="description-label"/>
 		</frame>
 	</frame>
 

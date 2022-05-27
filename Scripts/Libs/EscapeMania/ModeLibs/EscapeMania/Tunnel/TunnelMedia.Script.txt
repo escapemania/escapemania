@@ -1,54 +1,54 @@
 #Include "Libs/EscapeMania/ModeLibs/EscapeMania/Rooms/RoomsRequestRespawn.Script.txt" as RoomsRequestRespawn
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/MediaTracker/MediaTracker.Script.txt" as MediaTracker
 #Include "Libs/EscapeMania/ModeLibs/EscapeMania/Turtle/Turtle.Script.txt" as Turtle
 
 #Const C_TunnelTagPrefixRow "Tunnel_Row_"
 #Const C_TunnelTagPrefixColumn "Tunnel_Column_"
 #Const C_TunnelEntranceTag "Tunnel_Entrance"
+#Const C_MediaTrackerPriority 4
 
 #Include "TextLib" as TL
 
-declare Text[CSmPlayer] G_PreviousMediaTracker;
-declare Text G_CurrentMediaTracker;
 declare CSmPlayer G_CurrentPlayer;
+
+Void ResetMediaTracker() {
+	foreach (Player in Players) {
+		if (Player != G_CurrentPlayer) {
+			MediaTracker::UnsetMediaTracker(Player, C_MediaTrackerPriority);
+		}
+	}
+}
+
+Void ResetPuzzle() {
+	if (G_CurrentPlayer != Null) {
+		ResetMediaTracker();
+		G_CurrentPlayer = Null;
+	}
+}
 
 Void OnEnterTest(CSmPlayer EnterPlayer, Text Tag) {
 	declare Text MediaTracker = TL::Replace(TL::Replace(Tag, "Tunnel_", ""), "_", " ");
-	G_CurrentMediaTracker = MediaTracker;
 	foreach (Player in Players) {
-		declare UI = UIManager.GetUI(Player);
-		G_PreviousMediaTracker[Player] = UI.UISequence_CustomMTClip;
 		if (Player != EnterPlayer) {
-			UI.UISequence_CustomMTClip = MediaTracker;
+			MediaTracker::SetMediaTracker(Player, MediaTracker, C_MediaTrackerPriority);
 		}
+		declare UI = UIManager.GetUI(Player);
 		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
 	}
 }
 
+
 Void OnLeaveTest(CSmPlayer Player) {
-	if (G_CurrentMediaTracker == "" || Player != G_CurrentPlayer) {
-		return;
+	if (Player == G_CurrentPlayer) {
+		ResetMediaTracker();
 	}
-	
-	foreach (Player in Players) {
-		declare UI = UIManager.GetUI(Player);
-		if (Player != G_CurrentPlayer) {
-			declare Text MediaTracker = G_PreviousMediaTracker.get(Player, "");
-			if (MediaTracker != "") {
-				UI.UISequence_CustomMTClip = MediaTracker;
-			}
-			G_PreviousMediaTracker[Player] = "";
-		}
-	}
-	
-	G_CurrentMediaTracker = "";
 }
 
 Void OnRespawn(CSmPlayer Player) {
-	if (Player != G_CurrentPlayer) {
-		return;
+	if (Player == G_CurrentPlayer) {
+		OnLeaveTest(Player);
+		G_CurrentPlayer = Null;
 	}
-	G_CurrentPlayer = Null;
-	OnLeaveTest(Player);
 }
 
 Void OnEnterTunnel(CSmPlayer Player) {
@@ -57,17 +57,19 @@ Void OnEnterTunnel(CSmPlayer Player) {
 		declare UI = UIManager.GetUI(Player);
 		UI.QueueMessage(3000, 1, CUIConfig::EMessageDisplay::Big, "");
 		return;
-	} else if (G_CurrentPlayer != Null) {
+	}
+
+	if (G_CurrentPlayer != Null) {
 		RoomsRequestRespawn::RequestRespawn(Player);
 		declare UI = UIManager.GetUI(Player);
 		UI.QueueMessage(3000, 1, CUIConfig::EMessageDisplay::Big, " ");
+		return;
 	}
 	
 	G_CurrentPlayer = Player;
 }
 
 Void Init() {
-	G_CurrentMediaTracker = "";
 	G_CurrentPlayer = Null;
 }
 

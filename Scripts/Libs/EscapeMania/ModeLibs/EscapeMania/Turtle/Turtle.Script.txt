@@ -1,6 +1,8 @@
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/MediaTracker/MediaTracker.Script.txt" as MediaTracker
 
 #Const C_TestLandmarkTag "Turtle_Test"
 #Const C_MediaTracker "Turtle"
+#Const C_MediaTrackerPriority 3
 
 declare Boolean[CSmPlayer] G_InTurtle;
 declare Boolean G_IsComplete;
@@ -10,9 +12,21 @@ Void CompletePuzzle() {
 	
 	// Tell players something is happening
 	foreach (Player in Players) {
+		MediaTracker::SetMediaTracker(Player, C_MediaTracker, C_MediaTrackerPriority);
 		declare UI = UIManager.GetUI(Player);
-		UI.UISequence_CustomMTClip = C_MediaTracker;
 		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
+	}
+}
+
+Void Init() {
+	G_IsComplete = False;
+}
+
+Void ResetPuzzle() {
+	Init();
+	
+	foreach (Player in Players) {
+		MediaTracker::UnsetMediaTracker(Player, C_MediaTrackerPriority);
 	}
 }
 
@@ -54,15 +68,6 @@ Void OnLeaveTest(CSmPlayer Player) {
 
 Void OnRespawn(CSmPlayer Player) {
 	OnLeaveTest(Player);
-	
-	if (G_IsComplete) {
-		declare UI = UIManager.GetUI(Player);
-		UI.UISequence_CustomMTClip = C_MediaTracker;
-	}
-}
-
-Void Init() {
-	G_IsComplete = False;
 }
 
 Void Loop() {
