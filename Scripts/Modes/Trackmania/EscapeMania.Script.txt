@@ -110,13 +110,13 @@ foreach (Event in PendingEvents) {
 		case CSmModeEvent::EType::OnPlayerAdded: {	
 			foreach (Player in Players) {
 				declare UI = UIManager.GetUI(Player);
-				UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Chat, Player.User.Name ^ " joined the Escape!");
+				UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Chat, Event.User.Name ^ " joined the Escape!");
 			}
 		}
 		case CSmModeEvent::EType::OnPlayerRemoved: {
 			foreach (Player in Players) {
 				declare UI = UIManager.GetUI(Player);
-				UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Chat, Player.User.Name ^ " left the Escape!");
+				UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Chat, Event.User.Name ^ " left the Escape!");
 			}
 		}
 	}
