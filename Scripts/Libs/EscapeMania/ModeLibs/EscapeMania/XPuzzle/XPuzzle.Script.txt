@@ -30,7 +30,7 @@ Void ResetPuzzle() {
 Boolean IsPuzzleComplete() {
 	foreach (Landmark in MapLandmarks) {
 		if (Landmark.Tag == C_DropSuccessLandmarkTag) {
-			if (VirtualPickups::GetByHolder(Landmark).count == 0) {
+			if (VirtualPickups::GetByLandmark(Landmark).count == 0) {
 				return False;
 			}
 		}
@@ -69,30 +69,30 @@ Void Loop() {
 					TL::StartsWith(C_DropLandmarkTagPrefix, Event.Landmark.Tag)
 				) {
 					// Pickup
-					declare VirtualPickups::K_VirtualPickup[] LandmarkPickups = VirtualPickups::GetByHolder(Event.Landmark);
+					declare VirtualPickups::K_VirtualPickup[] LandmarkPickups = VirtualPickups::GetByLandmark(Event.Landmark);
 					if (LandmarkPickups.count > 0) {
 						declare VirtualPickups::K_VirtualPickup Pickup = LandmarkPickups[0];
 						if (Items::IsHelmetItem(Pickup)) {
 							// You can only have one item of this type
 							declare Boolean AlreadyHasItem = False;
-							foreach (Pickup in VirtualPickups::GetByHolder(Event.Player)) {
+							foreach (Pickup in VirtualPickups::GetByPlayer(Event.Player)) {
 								if (Items::IsHelmetItem(Pickup)) {
 									AlreadyHasItem = True;
 									break;
 								}	
 							}
 							if (!AlreadyHasItem) {
-								VirtualPickups::SetHolder(Pickup.Id, Event.Player);					
+								VirtualPickups::SetPlayer(Pickup.Id, Event.Player);					
 							}
 						} else if (Items::IsOrbItem(Pickup)) {
-							VirtualPickups::SetHolder(Pickup.Id, Event.Player);					
+							VirtualPickups::SetPlayer(Pickup.Id, Event.Player);					
 						}
 						
 					// Dropoff
 					} else if (TL::StartsWith(C_DropLandmarkTagPrefix, Event.Landmark.Tag)) {
-						foreach (Pickup in VirtualPickups::GetByHolder(Event.Player)) {
+						foreach (Pickup in VirtualPickups::GetByPlayer(Event.Player)) {
 							if (Items::IsOrbItem(Pickup)) {
-								VirtualPickups::SetHolder(Pickup.Id, Event.Landmark);
+								VirtualPickups::SetLandmark(Pickup.Id, Event.Landmark);
 								
 								if (IsPuzzleComplete()) {
 									CompletePuzzle();

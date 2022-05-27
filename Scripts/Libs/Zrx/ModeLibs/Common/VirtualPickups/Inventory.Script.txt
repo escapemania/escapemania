@@ -104,7 +104,7 @@ K_Net_VirtualPickup[] Private_ConvertVirtualPickupsToNetData(VirtualPickups::K_V
  */
 Void Net_SendPickupData(CSmPlayer Player) {
 	declare netwrite K_Net_VirtualPickup[] Net_Inventory_Pickups for Player;
-	declare VirtualPickups::K_VirtualPickup[] PlayerPickups = VirtualPickups::GetByHolder(Player);
+	declare VirtualPickups::K_VirtualPickup[] PlayerPickups = VirtualPickups::GetByPlayer(Player);
 	Net_Inventory_Pickups = Private_ConvertVirtualPickupsToNetData(PlayerPickups);
 }
 

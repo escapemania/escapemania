@@ -62,7 +62,7 @@ Text GetManialink() {
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <manialink version="3" name="Timer">
 
-	<label z-index="1" text="" halign="center" textfont="GameFontBlack" textsize="10" valign="center2" pos="0 65" id="timer-label"/>
+	<label z-index="100" text="" halign="center" textfont="GameFontBlack" textsize="10" valign="center2" pos="0 65" id="timer-label"/>
 
 	<script><!--
 	main() {

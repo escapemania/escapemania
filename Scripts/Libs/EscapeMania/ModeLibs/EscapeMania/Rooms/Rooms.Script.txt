@@ -23,10 +23,6 @@ Void EnterRoom(CSmPlayer Player, Integer RoomNumber) {
 }
 
 Void OnStartMap() {
-	foreach (Player in Players) {
-		G_CurrentRoom[Player] = 0;
-	}
-
 	UIManager.UIAll.PlayerDisableFreeCam = True;
 	
 	G_Spawn = Null;
@@ -45,16 +41,22 @@ Void OnStartMap() {
 	}
 }
 
-Void OnFinish() {
-	foreach (Player in Players) {
-		G_CurrentRoom[Player] = 3;
+Void OnFinish(CSmPlayer Player) {
+	declare Boolean HasFinished = False;
+	foreach (Player => Room in G_CurrentRoom) {
+		if (Room == 3) {
+			HasFinished = True;
+			break;
+		}
 	}
-	Timer::Stop();
+	G_CurrentRoom[Player] = 3;
+
+	declare UI = UIManager.GetUI(Player);
+	UI.QueueMessage(5000, 1, CUIConfig::EMessageDisplay::Big, "");
+	UI.PlayerDisableFreeCam = False;
 	
-	foreach (Player in Players) {
-		declare UI = UIManager.GetUI(Player);
-		UI.QueueMessage(5000, 1, CUIConfig::EMessageDisplay::Big, "");
-		UIManager.UIAll.PlayerDisableFreeCam = False;
+	if (!HasFinished) {
+		Timer::Stop();
 	}
 }
 
@@ -67,17 +69,18 @@ CMapSpawn GetSpawn(CSmPlayer Player) {
 }
 
 Void OnRespawn(CSmPlayer Player, CMapLandmark Location) {
-	if (G_CurrentRoom[Player] != 3) {
-		if (Location != Null) {
-			RespawnPlayer(Player, Location.Waypoint);
-		} else {
-			RespawnPlayer(Player, GetSpawn(Player));
-		}
+	if (Location != Null) {
+		RespawnPlayer(Player, Location.PlayerSpawn);
+	} else {
+		RespawnPlayer(Player, GetSpawn(Player));
 	}
 }
 
 
 Void OnPlayerSpawn(CSmPlayer Player) {
+	if (!G_CurrentRoom.existskey(Player)) {
+		G_CurrentRoom[Player] = 0;
+	}
 	SpawnPlayer(Player, Player.CurrentClan, 100, G_Spawn, Now);
 }
 
@@ -91,7 +94,7 @@ Void Loop() {
 				} else if (Event.Landmark.Tag == C_Room2LandmarkTag) {
 					EnterRoom(Event.Player, 2);
 				} else if (Event.Landmark.Tag == "Goal") {
-					OnFinish();
+					OnFinish(Event.Player);
 				}
 			}
 		}

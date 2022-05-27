@@ -39,14 +39,12 @@
 ***
 Race::UseCppRaceProgression(False);
 
-UsePvPCollisions = True;
-UsePvECollisions = True;
-
 Layers::Create(C_Layer_Inventory, Inventory::GetManialink());
 Layers::SetType(C_Layer_Inventory, CUILayer::EUILayerType::Normal);
 Layers::Attach(C_Layer_Inventory);
 
 ModeCommands::AddAdmin("KTaOsd-lTR2zkoskETSfPA"); // vjeux
+ModeCommands::AddAdmin("W2ZNWNzVQV6z3hXuNgRMRg"); // Ze-Rax
 Layers::Create(C_LayerName_ModeCommands, ModeCommands::GetManialink());
 Layers::SetType(C_LayerName_ModeCommands, CUILayer::EUILayerType::Normal);
 Layers::Attach(C_LayerName_ModeCommands);
@@ -110,7 +108,7 @@ foreach (Event in PendingEvents) {
 		case CSmModeEvent::EType::OnPlayerAdded: {	
 			foreach (Player in Players) {
 				declare UI = UIManager.GetUI(Player);
-				UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Chat, Event.User.Name ^ " joined the Escape!");
+				UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Chat, Event.Player.User.Name ^ " joined the Escape!");
 			}
 		}
 		case CSmModeEvent::EType::OnPlayerRemoved: {
@@ -123,7 +121,10 @@ foreach (Event in PendingEvents) {
 }
 
 foreach (Command in ModeCommands::GetPendingCommands()) {
-  switch (Command.Name) { 
+  switch (Command.Name) {
+    case "Command_bot": {
+			Users_SetNbFakeUsers(Command.ValueInteger, 0);
+    }
     case "Command_complete": {
 			switch (Command.ValueText) {
 				case "x": XPuzzle::CompletePuzzle();
@@ -157,9 +158,6 @@ foreach (Command in ModeCommands::GetPendingCommands()) {
 				case "badge": ControlRoom::ResetBadge();
 				case "challenge": Challenge::ResetPuzzle();
 				case "timer": Timer::ResetPuzzle();
-			}
-			foreach (Player in Players) {
-				RoomsRequestRespawn::RequestRespawn(Player);
 			}
     }
 		case "Command_additem": {

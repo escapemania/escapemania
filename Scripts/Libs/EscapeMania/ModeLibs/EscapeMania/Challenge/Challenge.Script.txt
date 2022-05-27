@@ -25,6 +25,10 @@ Void ResetPuzzle() {
 
 Void CompletePuzzle() {
 	G_IsComplete = True;
+	foreach (Player in Players) {
+		declare UI = UIManager.GetUI(Player);
+		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
+	}
 	ResetMediaTrackers();
 	G_CurrentPlayer = Null;
 }

@@ -25,7 +25,10 @@ Void CreateItem(CNod Landmark, Text Type, Text Name, Text Description, Text Icon
 	G_Item_Count += 1;
 	declare Text PickupId = Type ^ G_Item_Count;
 	VirtualPickups::Create(PickupId);
-	VirtualPickups::SetHolder(PickupId, Landmark);
+	switchtype (Landmark) {
+		case CSmPlayer: VirtualPickups::SetPlayer(PickupId, (Landmark as CSmPlayer));
+		case CMapLandmark: VirtualPickups::SetLandmark(PickupId, (Landmark as CMapLandmark));
+	}
 	VirtualPickups::SetCustomDataText(PickupId, C_ItemType, Type);
 
 	declare VirtualPickups::K_MarkerConfig MarkerConfig = VirtualPickups::DefaultMarkerConfig();
@@ -43,6 +46,7 @@ Text GetPickupType(VirtualPickups::K_VirtualPickup Pickup) {
 }
 
 Void Init() {
+	UIManager.UIAll.LabelsVisibility = CUIConfig::EHudVisibility::Everything;
 	G_Item_Count = 0;
 }
 
@@ -54,16 +58,19 @@ Void Loop() {
 				declare Text Login = Event.Player.User.Login;
 				if (G_SavedItems.existskey(Login)) {
 					foreach (Id in G_SavedItems[Login].Ids) {
-						VirtualPickups::SetHolder(Id, Event.Player);
+						log("Save " ^ Id);
+						VirtualPickups::SetPlayer(Id, Event.Player);
 					}
 					G_SavedItems[Login].Ids.clear();
 				}
 			}
 			case CSmModeEvent::EType::OnPlayerRemoved: {
+				G_SavedItems[Event.User.Login] = K_Ids { Ids = [] };
 				foreach (Pickup in VirtualPickups::GetAll()) {
-					if (Pickup.CustomData.TextData.get("Player.User.Login", "") == Event.User.Login) {
+					if (Pickup.PlayerId == Event.User.Login) {
+						log("Restore " ^ Id);
 						G_SavedItems[Event.User.Login].Ids.add(Pickup.Id);
-						VirtualPickups::SetHolder(Pickup.Id, Null);
+						VirtualPickups::SetUnspawned(Pickup.Id);
 					}
 				}
 			}

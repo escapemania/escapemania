@@ -19,9 +19,7 @@ declare Integer[CSmPlayer] G_IsSuccess;
 declare Boolean G_IsComplete;
 
 Void ResetPuzzle() {
-	foreach (Player => Success in G_IsSuccess) {
-		G_IsSuccess[Player] = 0;
-	}
+	G_IsSuccess.clear();
 	G_IsComplete = False;
 	// Destroy Badge Items
 	foreach (Pickup in VirtualPickups::GetAll()) {
@@ -131,11 +129,11 @@ Void Loop() {
 					OnFailureTest(Event.Player, Event.Landmark.Tag);
 				} else if (Event.Landmark.Tag == C_ItemLandmarkTag) {
 					// Pickup
-					declare VirtualPickups::K_VirtualPickup[] LandmarkPickups = VirtualPickups::GetByHolder(Event.Landmark);
+					declare VirtualPickups::K_VirtualPickup[] LandmarkPickups = VirtualPickups::GetByLandmark(Event.Landmark);
 					if (LandmarkPickups.count > 0) {
 						declare VirtualPickups::K_VirtualPickup Pickup = LandmarkPickups[0];
 						if (Items::IsBadgeItem(Pickup)) {
-							VirtualPickups::SetHolder(Pickup.Id, Event.Player);
+							VirtualPickups::SetPlayer(Pickup.Id, Event.Player);
 						}
 					}
 				} else {

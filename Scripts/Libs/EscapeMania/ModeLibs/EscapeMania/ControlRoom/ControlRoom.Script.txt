@@ -32,7 +32,7 @@ Void ResetPuzzle() {
 
 Void OnEntrance(CSmPlayer Player) {
 	if (G_IsGateLocked) {
-		foreach (Pickup in VirtualPickups::GetByHolder(Player)) {
+		foreach (Pickup in VirtualPickups::GetByPlayer(Player)) {
 			if (Items::IsBadgeItem(Pickup)) {
 				CompleteBadge();
 				break;
@@ -61,7 +61,7 @@ Void OnKey(CSmPlayer Player) {
 		return;
 	}
 	
-	foreach (Pickup in VirtualPickups::GetByHolder(Player)) {
+	foreach (Pickup in VirtualPickups::GetByPlayer(Player)) {
 		if (Items::IsKeyItem(Pickup)) {
 			CompletePuzzle();
 			break;

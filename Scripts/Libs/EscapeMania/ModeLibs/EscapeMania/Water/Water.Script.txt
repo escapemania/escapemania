@@ -70,7 +70,7 @@ Void OnChange(CSmPlayer Player, Boolean GoesInside) {
 	// Delete the bottle on the landmark	
 	foreach (Landmark in MapLandmarks) {
 		if (Landmark.Tag == C_BottleLandmarkTag) {
-			foreach (Pickup in VirtualPickups::GetByHolder(Landmark)) {
+			foreach (Pickup in VirtualPickups::GetByLandmark(Landmark)) {
 				if (Items::IsBottleItem(Pickup)) {
 					VirtualPickups::Destroy(Pickup.Id);
 				}
@@ -89,7 +89,7 @@ Void OnChange(CSmPlayer Player, Boolean GoesInside) {
 Boolean CanBreath(CSmPlayer Player) {
 	declare Boolean HasHelmet = False;
 	declare Boolean HasPowerSource = False;
-	foreach (Pickup in VirtualPickups::GetByHolder(Player)) {
+	foreach (Pickup in VirtualPickups::GetByPlayer(Player)) {
 		if (Items::IsHelmetItem(Pickup)) {
 			HasHelmet = True;
 		}
@@ -134,11 +134,11 @@ Void Loop() {
 					OnWaterEnd(Event.Player);
 				} else if (Event.Landmark.Tag == C_BottleLandmarkTag) {
 					// Pickup
-					declare VirtualPickups::K_VirtualPickup[] LandmarkPickups = VirtualPickups::GetByHolder(Event.Landmark);
+					declare VirtualPickups::K_VirtualPickup[] LandmarkPickups = VirtualPickups::GetByLandmark(Event.Landmark);
 					if (LandmarkPickups.count > 0) {
 						declare VirtualPickups::K_VirtualPickup Pickup = LandmarkPickups[0];
 						if (Items::IsBottleItem(Pickup)) {
-							VirtualPickups::SetHolder(Pickup.Id, Event.Player);
+							VirtualPickups::SetPlayer(Pickup.Id, Event.Player);
 							G_IsComplete = True;
 						}
 					}
