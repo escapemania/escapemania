@@ -9,17 +9,17 @@ declare CMapSpawn G_Spawn;
 declare CMapSpawn G_Room1Spawn;
 declare CMapSpawn G_Room2Spawn;
 
-declare Integer[CSmPlayer] G_CurrentRoom;
+declare Integer[Text] G_CurrentRoom;
 
 Void ResetPuzzle(Integer Room) {
-	foreach (Player in Players) {
-		G_CurrentRoom[Player] = Room;
+	foreach (PlayerLogin => CurrentRoom in G_CurrentRoom) {
+		G_CurrentRoom[PlayerLogin] = Room;
 	}
 	UIManager.UIAll.PlayerDisableFreeCam = True;
 }
 
 Void EnterRoom(CSmPlayer Player, Integer RoomNumber) {
-	G_CurrentRoom[Player] = RoomNumber;
+	G_CurrentRoom[Player.User.Login] = RoomNumber;
 }
 
 Void OnStartMap() {
@@ -43,13 +43,13 @@ Void OnStartMap() {
 
 Void OnFinish(CSmPlayer Player) {
 	declare Boolean HasFinished = False;
-	foreach (Player => Room in G_CurrentRoom) {
+	foreach (PlayerLogin => Room in G_CurrentRoom) {
 		if (Room == 3) {
 			HasFinished = True;
 			break;
 		}
 	}
-	G_CurrentRoom[Player] = 3;
+	G_CurrentRoom[Player.User.Login] = 3;
 
 	declare UI = UIManager.GetUI(Player);
 	UI.QueueMessage(5000, 1, CUIConfig::EMessageDisplay::Big, "");
@@ -61,7 +61,7 @@ Void OnFinish(CSmPlayer Player) {
 }
 
 CMapSpawn GetSpawn(CSmPlayer Player) {
-	switch (G_CurrentRoom.get(Player, 0)) {
+	switch (G_CurrentRoom.get(Player.User.Login, 0)) {
 		case 2: return G_Room2Spawn;
 		case 1: return G_Room1Spawn;
 	}
@@ -78,10 +78,10 @@ Void OnRespawn(CSmPlayer Player, CMapLandmark Location) {
 
 
 Void OnPlayerSpawn(CSmPlayer Player) {
-	if (!G_CurrentRoom.existskey(Player)) {
-		G_CurrentRoom[Player] = 0;
+	if (!G_CurrentRoom.existskey(Player.User.Login)) {
+		G_CurrentRoom[Player.User.Login] = 0;
 	}
-	SpawnPlayer(Player, Player.CurrentClan, 100, G_Spawn, Now);
+	SpawnPlayer(Player, Player.CurrentClan, 100, GetSpawn(Player), Now);
 }
 
 Void Loop() {

@@ -8,7 +8,7 @@
 #Const C_MediaTrackerPlayer "Challenge Blindfold"
 #Const C_MediaTrackerPriority 5
 
-declare CSmPlayer G_CurrentPlayer;
+declare Text G_CurrentPlayerLogin;
 declare Boolean G_IsComplete;
 declare CMapLandmark G_SpawnLocation;
 
@@ -24,13 +24,11 @@ Void ResetPuzzle() {
 }
 
 Void CompletePuzzle() {
-	G_IsComplete = True;
-	foreach (Player in Players) {
-		declare UI = UIManager.GetUI(Player);
-		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
-	}
 	ResetMediaTrackers();
-	G_CurrentPlayer = Null;
+	G_CurrentPlayerLogin = "";
+	if (!G_IsComplete) {
+		UIManager.UIAll.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
+	}
 }
 
 Void OnEnd(CSmPlayer Player) {
@@ -38,28 +36,34 @@ Void OnEnd(CSmPlayer Player) {
 	CompletePuzzle();
 }
 
-Void OnLeave(CSmPlayer Player) {
-	G_CurrentPlayer = Null;
+Void OnLeave() {
+	G_CurrentPlayerLogin = "";
 	ResetMediaTrackers();
+}
+
+Void OnPlayerLeave(CUser User) {
+	if (G_CurrentPlayerLogin == User.Login) {
+		OnLeave();
+	}
 }
 
 Void OnEntrance(CSmPlayer Player) {
 	if (G_IsComplete) {
 		return;
 	}
-	if (G_CurrentPlayer == Player) {
-		OnLeave(Player);
+	if (G_CurrentPlayerLogin == Player.User.Login) {
+		OnLeave();
 		return;
 	}
 
-	if (G_CurrentPlayer != Null) {
+	if (G_CurrentPlayerLogin != "") {
 		RoomsRequestRespawn::RequestRespawn(Player);
 		declare UI = UIManager.GetUI(Player);
 		UI.QueueMessage(3000, 1, CUIConfig::EMessageDisplay::Big, " ");
 		return;
 	}
 
-	G_CurrentPlayer = Player;
+	G_CurrentPlayerLogin = Player.User.Login;
 	RoomsRequestRespawn::RequestRespawnAtLocation(Player, G_SpawnLocation);
 	MediaTracker::SetMediaTracker(Player, C_MediaTrackerPlayer, C_MediaTrackerPriority);
 	foreach (OtherPlayer in Players) {
@@ -71,13 +75,13 @@ Void OnEntrance(CSmPlayer Player) {
 }
 
 Void OnRespawn(CSmPlayer Player, CMapLandmark Location) {
-	if (Player == G_CurrentPlayer && Location != G_SpawnLocation) {
-		OnLeave(Player);
+	if (Player.User.Login == G_CurrentPlayerLogin && Location != G_SpawnLocation) {
+		OnLeave();
 	}
 }
 
 Void Init() {
-	G_CurrentPlayer = Null;
+	G_CurrentPlayerLogin = "";
 	G_IsComplete = False;
 	
 	foreach (Landmark in MapLandmarks) {

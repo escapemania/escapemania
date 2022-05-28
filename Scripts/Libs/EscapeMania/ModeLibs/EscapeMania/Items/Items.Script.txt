@@ -1,25 +1,34 @@
+// #RequireContext CSmMode
+
 #Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/VirtualPickups.Script.txt" as VirtualPickups
 #Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/Inventory.Script.txt" as Inventory
 
 #Const C_ItemType "ItemType"
 
 #Const C_OrbItemType "Orb"
+#Const C_OrbItemIcon "https://cdn.discordapp.com/attachments/929103899137310810/973034869439479888/x_item.png"
 #Const C_HelmetItemType "Helmet"
+#Const C_HelmetItemIcon "https://cdn.discordapp.com/attachments/929103899137310810/977318149403836566/helmet_item.png"
 #Const C_LetterU_ItemType "LetterU"
+#Const C_LetterU_ItemIcon "https://cdn.discordapp.com/attachments/929103899137310810/977341199046299668/letter_U_item.png"
 #Const C_LetterI_ItemType "LetterI"
+#Const C_LetterI_ItemIcon "https://cdn.discordapp.com/attachments/929103899137310810/977341199289548830/letter_I_item.png"
 #Const C_LetterL_ItemType "LetterL"
+#Const C_LetterL_ItemIcon "https://cdn.discordapp.com/attachments/929103899137310810/977341199503487016/letter_L_item.png"
 #Const C_LetterN_ItemType "LetterN"
+#Const C_LetterN_ItemIcon "https://cdn.discordapp.com/attachments/929103899137310810/977341199725760523/letter_N_item.png"
 #Const C_PowerSourceItemType "PowerSource"
+#Const C_PowerSourceItemIcon "https://cdn.discordapp.com/attachments/929103899137310810/977363945834831913/powersource_item.png"
 #Const C_BottleItemType "Bottle"
+#Const C_BottleItemIcon "https://cdn.discordapp.com/attachments/929103899137310810/977637638574075985/bottle_item.png"
 #Const C_KeyItemType "Key"
+#Const C_KeyItemIcon "https://cdn.discordapp.com/attachments/929103899137310810/977724464211066970/key_item.png"
 #Const C_BadgeItemType "Badge"
+#Const C_BadgeItemIcon "https://cdn.discordapp.com/attachments/929103899137310810/977724464412368926/badge_item.png"
 
-#Struct K_Ids {
-	Text[] Ids;
-}
+#Const C_LayerName_Items "ItemsLayer"
 
 declare Integer G_Item_Count;
-declare K_Ids[Text] G_SavedItems; 
 
 Void CreateItem(CNod Landmark, Text Type, Text Name, Text Description, Text Icon) {
 	G_Item_Count += 1;
@@ -31,10 +40,12 @@ Void CreateItem(CNod Landmark, Text Type, Text Name, Text Description, Text Icon
 	}
 	VirtualPickups::SetCustomDataText(PickupId, C_ItemType, Type);
 
+	declare Text LayerName = C_LayerName_Items ^ G_Item_Count;
+
 	declare VirtualPickups::K_MarkerConfig MarkerConfig = VirtualPickups::DefaultMarkerConfig();
 	MarkerConfig.HudVisibility = CUIConfigMarker::EHudVisibility::WhenVisible;
 	MarkerConfig.ImageUrl = Icon;
-
+	
 	VirtualPickups::SetMarkerConfig(PickupId, MarkerConfig);
 	VirtualPickups::SetCustomDataText(PickupId, Inventory::C_PickupCustomDataKey_ImageUrl, Icon);
 	VirtualPickups::SetCustomDataText(PickupId, Inventory::C_PickupCustomDataKey_Name, Name);
@@ -50,32 +61,22 @@ Void Init() {
 	G_Item_Count = 0;
 }
 
-Void Loop() {
-	// Save & Restore
-	foreach (Event in PendingEvents) {
-		switch (Event.Type) {
-			case CSmModeEvent::EType::OnPlayerAdded: {
-				declare Text Login = Event.Player.User.Login;
-				if (G_SavedItems.existskey(Login)) {
-					foreach (Id in G_SavedItems[Login].Ids) {
-						log("Save " ^ Id);
-						VirtualPickups::SetPlayer(Id, Event.Player);
-					}
-					G_SavedItems[Login].Ids.clear();
-				}
-			}
-			case CSmModeEvent::EType::OnPlayerRemoved: {
-				G_SavedItems[Event.User.Login] = K_Ids { Ids = [] };
-				foreach (Pickup in VirtualPickups::GetAll()) {
-					if (Pickup.PlayerId == Event.User.Login) {
-						log("Restore " ^ Id);
-						G_SavedItems[Event.User.Login].Ids.add(Pickup.Id);
-						VirtualPickups::SetUnspawned(Pickup.Id);
-					}
-				}
-			}
-		}
-	}
+Text GetManialink() {
+	return """
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<manialink version="3" name="Items_Preload">
+	<quad size="1 1" image="{{{C_OrbItemIcon}}}" pos="1001 1" />
+	<quad size="1 1" image="{{{C_HelmetItemIcon}}}" pos="1002 2" />
+	<quad size="1 1" image="{{{C_LetterU_ItemIcon}}}" pos="1003 3" />
+	<quad size="1 1" image="{{{C_LetterI_ItemIcon}}}" pos="1004 4" />
+	<quad size="1 1" image="{{{C_LetterL_ItemIcon}}}" pos="1005 5" />
+	<quad size="1 1" image="{{{C_LetterN_ItemIcon}}}" pos="1006 6" />
+	<quad size="1 1" image="{{{C_PowerSourceItemIcon}}}" pos="1007 7" />
+	<quad size="1 1" image="{{{C_BottleItemIcon}}}" pos="1008 8" />
+	<quad size="1 1" image="{{{C_KeyItemIcon}}}" pos="1009 9" />
+	<quad size="1 1" image="{{{C_BadgeItemIcon}}}" pos="10010 10" />
+</manialink>
+	""";
 }
 
 // ---------
@@ -86,7 +87,7 @@ Void CreateOrbItem(CNod Landmark) {
 		C_OrbItemType,
 		"Boule de Feu\n$cccGlowing Orb",
 		"Etrangement attirée par des cerceaux tournants...\n\n$cccIt is attracted to round moving objects...",
-		"https://cdn.discordapp.com/attachments/929103899137310810/973034869439479888/x_item.png"
+		C_OrbItemIcon
 	);
 }
 
@@ -100,7 +101,7 @@ Void CreateHelmetItem(CNod Landmark) {
 		C_HelmetItemType,
 		"Casque de Respiration\n$cccWater Breathing Helmet",
 		"Ce casque magique vous permet de respirer sous l'eau lorsqu'il est alimenté par une source d'énergie bleue.\n\n$cccThis strange helmet lets you breath under water when powered by a blue power source.",
-		"https://cdn.discordapp.com/attachments/929103899137310810/977318149403836566/helmet_item.png"
+		C_HelmetItemIcon
 	);
 }
 
@@ -115,7 +116,7 @@ Void CreateLetterUItem(CNod Landmark) {
 		C_LetterU_ItemType,
 		"Tuyau en U\n$cccU Pipe",
 		"Un gros tuyau qui ressemble à la lettre U.\n\n$cccA thick U-shaped piece of pipe.",
-		"https://cdn.discordapp.com/attachments/929103899137310810/977341199046299668/letter_U_item.png"
+		C_LetterU_ItemIcon
 	);
 }
 
@@ -129,7 +130,7 @@ Void CreateLetterIItem(CNod Landmark) {
 		C_LetterI_ItemType,
 		"Tuyau en U\n$cccI Pipe",
 		"Un gros tuyau qui ressemble à la lettre I.\n\n$cccA thick I-shaped piece of pipe.",
-		"https://cdn.discordapp.com/attachments/929103899137310810/977341199289548830/letter_I_item.png"
+		C_LetterI_ItemIcon
 	);
 }
 
@@ -143,7 +144,7 @@ Void CreateLetterLItem(CNod Landmark) {
 		C_LetterL_ItemType,
 		"Tuyau en L\n$cccL Pipe",
 		"Un gros tuyau qui ressemble à la lettre L.\n\n$cccA thick L-shaped piece of pipe.",
-		"https://cdn.discordapp.com/attachments/929103899137310810/977341199503487016/letter_L_item.png"
+		C_LetterL_ItemIcon
 	);
 }
 
@@ -157,7 +158,7 @@ Void CreateLetterNItem(CNod Landmark) {
 		C_LetterN_ItemType,
 		"Tuyau en N\n$cccN Pipe",
 		"Un gros tuyau qui ressemble à la lettre N.\n\n$cccA thick N-shaped piece of pipe.",
-		"https://cdn.discordapp.com/attachments/929103899137310810/977341199725760523/letter_N_item.png"
+		C_LetterN_ItemIcon
 	);
 }
 
@@ -180,7 +181,7 @@ Void CreatePowerSourceItem(CNod Landmark) {
 		C_PowerSourceItemType,
 		"Source d'Energie Bleue\n$cccBlue Power Source",
 		"Cette source d'énergie bleue active les pouvoirs d'objets magiques.\n\n$cccThis blue power source activates magical objects.",
-		"https://cdn.discordapp.com/attachments/929103899137310810/977363945834831913/powersource_item.png"
+		C_PowerSourceItemIcon
 	);
 }
 
@@ -194,7 +195,7 @@ Void CreateBottleItem(CNod Landmark) {
 		C_BottleItemType,
 		"Bouteille à la Mer\n$cccMessage in a Bottle",
 		"Les boules doivent être placées\ndans la pénombre\nen ligne droite\npour que les coins se rejoignent\n      -- Capitaine\n\n$cccThe orbs must be placed\nwhere darkness lies\nin straight lines\nfor corners to meet\n      -- Captain",
-		"https://cdn.discordapp.com/attachments/929103899137310810/977637638574075985/bottle_item.png"
+		C_BottleItemIcon
 	);
 }
 
@@ -208,7 +209,7 @@ Void CreateKeyItem(CNod Landmark) {
 		C_KeyItemType,
 		"Clé Rouge\n$cccRed Key",
 		"Cette clé permet d'arrêter ce vaisseau dans la salle de contrôle. Quand le vaisseau est arrêté, le système qui génère une gravité terriène ne fonctionne plus.\n\n$cccUse this key in the control room to stop the ship. When the ship is stopped, the mechanism that enables earth-like gravity movement no longer works!",
-		"https://cdn.discordapp.com/attachments/929103899137310810/977724464211066970/key_item.png"
+		C_KeyItemIcon
 	);
 }
 
@@ -222,7 +223,7 @@ Void CreateBadgeItem(CNod Landmark) {
 		C_BadgeItemType,
 		"Brouilleur\n$cccBadge Jammer",
 		"Ce brouilleur fait malfonctionner les contrôles d'accès.\n\n$cccThis badge jams access control mechanisms it encounters.",
-		"https://cdn.discordapp.com/attachments/929103899137310810/977724464412368926/badge_item.png"
+		C_BadgeItemIcon
 	);
 }
 

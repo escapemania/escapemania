@@ -9,20 +9,20 @@
 
 #Include "TextLib" as TL
 
-declare CSmPlayer G_CurrentPlayer;
+declare Text G_CurrentPlayerLogin;
 
 Void ResetMediaTracker() {
 	foreach (Player in Players) {
-		if (Player != G_CurrentPlayer) {
+		if (Player.User.Login != G_CurrentPlayerLogin) {
 			MediaTracker::UnsetMediaTracker(Player, C_MediaTrackerPriority);
 		}
 	}
 }
 
 Void ResetPuzzle() {
-	if (G_CurrentPlayer != Null) {
+	if (G_CurrentPlayerLogin != "") {
 		ResetMediaTracker();
-		G_CurrentPlayer = Null;
+		G_CurrentPlayerLogin = "";
 	}
 }
 
@@ -39,15 +39,15 @@ Void OnEnterTest(CSmPlayer EnterPlayer, Text Tag) {
 
 
 Void OnLeaveTest(CSmPlayer Player) {
-	if (Player == G_CurrentPlayer) {
+	if (Player.User.Login == G_CurrentPlayerLogin) {
 		ResetMediaTracker();
 	}
 }
 
 Void OnRespawn(CSmPlayer Player) {
-	if (Player == G_CurrentPlayer) {
+	if (Player.User.Login == G_CurrentPlayerLogin) {
 		OnLeaveTest(Player);
-		G_CurrentPlayer = Null;
+		G_CurrentPlayerLogin = "";
 	}
 }
 
@@ -59,18 +59,18 @@ Void OnEnterTunnel(CSmPlayer Player) {
 		return;
 	}
 
-	if (G_CurrentPlayer != Null) {
+	if (G_CurrentPlayerLogin != "") {
 		RoomsRequestRespawn::RequestRespawn(Player);
 		declare UI = UIManager.GetUI(Player);
 		UI.QueueMessage(3000, 1, CUIConfig::EMessageDisplay::Big, " ");
 		return;
 	}
 	
-	G_CurrentPlayer = Player;
+	G_CurrentPlayerLogin = Player.User.Login;
 }
 
 Void Init() {
-	G_CurrentPlayer = Null;
+	G_CurrentPlayerLogin = "";
 }
 
 Void Loop() {

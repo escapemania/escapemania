@@ -23,6 +23,7 @@
 
 #Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/Inventory.Script.txt" as Inventory
 #Include "Libs/Zrx/ModeLibs/Common/Commands/ModeCommands.Script.txt" as ModeCommands
+#Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/VirtualPickups.Script.txt" as VirtualPickups
 
 #Include "TextLib" as TL
 #Include "MathLib" as ML
@@ -34,6 +35,7 @@
 #Const C_Layer_Inventory "Layer_Inventory"
 #Const C_LayerName_ModeCommands "Layer_ModeCommands"
 #Const C_LayerName_Timer "Layer_Timer"
+#Const C_LayerName_ItemsPreload "Layer_ItemsPreload"
 
 ***Match_StartServer***
 ***
@@ -52,6 +54,10 @@ Layers::Attach(C_LayerName_ModeCommands);
 Layers::Create(C_LayerName_Timer, Timer::GetManialink());
 Layers::SetType(C_LayerName_Timer, CUILayer::EUILayerType::Normal);
 Layers::Attach(C_LayerName_Timer);
+
+Layers::Create(C_LayerName_ItemsPreload, Items::GetManialink());
+Layers::SetType(C_LayerName_ItemsPreload, CUILayer::EUILayerType::Normal);
+Layers::Attach(C_LayerName_ItemsPreload);
 ***
 
 ***Match_StartMap***
@@ -90,6 +96,12 @@ Void OnRespawn(CSmPlayer Player, CMapLandmark Location) {
 Void OnPlayerSpawn(CSmPlayer Player) {
 	Rooms::OnPlayerSpawn(Player);
 	EnergyWall::OnPlayerSpawn(Player);
+	MediaTracker::OnPlayerSpawn(Player);
+	ControlRoom::OnPlayerSpawn(Player);
+}
+
+Void OnPlayerLeave(CUser User) {
+	Challenge::OnPlayerLeave(User);
 }
 
 ***Match_PlayLoop***
@@ -106,16 +118,11 @@ foreach (Event in PendingEvents) {
 			OnRespawn(Event.Player, Null);
 		}
 		case CSmModeEvent::EType::OnPlayerAdded: {	
-			foreach (Player in Players) {
-				declare UI = UIManager.GetUI(Player);
-				UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Chat, Event.Player.User.Name ^ " joined the Escape!");
-			}
+			UIManager.UIAll.SendChat(Event.Player.User.Name ^ " joined the Escape!");
 		}
 		case CSmModeEvent::EType::OnPlayerRemoved: {
-			foreach (Player in Players) {
-				declare UI = UIManager.GetUI(Player);
-				UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Chat, Event.User.Name ^ " left the Escape!");
-			}
+			OnPlayerLeave(Event.User);
+			UIManager.UIAll.SendChat(Event.User.Name ^ " left the Escape!");
 		}
 	}
 }
@@ -125,6 +132,26 @@ foreach (Command in ModeCommands::GetPendingCommands()) {
     case "Command_bot": {
 			Users_SetNbFakeUsers(Command.ValueInteger, 0);
     }
+    case "Command_message": {
+			UIManager.UIAll.QueueMessage(3000, 1, CUIConfig::EMessageDisplay::Big, Command.ValueText);
+    }
+		case "Command_collision": {
+			if (Command.ValueText == "enable") {
+				UsePvPCollisions = True;
+				UsePvECollisions = True;
+				foreach (Player in Players) {
+					Player.TrustClientSimu = False;
+					Player.UseCrudeExtrapolation = False;
+				}
+			} else if (Command.ValueText == "disable") {
+				UsePvPCollisions = False;
+				UsePvECollisions = False;
+				foreach (Player in Players) {
+					Player.TrustClientSimu = True;
+					Player.UseCrudeExtrapolation = True;
+				}
+			}
+		}
     case "Command_complete": {
 			switch (Command.ValueText) {
 				case "x": XPuzzle::CompletePuzzle();
@@ -180,11 +207,13 @@ foreach (Command in ModeCommands::GetPendingCommands()) {
 				}
 			}
 		}
+		case "Command_restart": {
+			assert(False);
+		}
   }
 }
 
 Timer::Loop();
-Items::Loop();
 Rooms::Loop();
 EnergyWall::Loop();
 XPuzzle::Loop();
@@ -208,9 +237,10 @@ RoomsRequestRespawn::Reset();
 ***
 
 
-***MB_Private_Yield***
+***Match_Yield***
 ***
 ModeCommands::Yield();
+VirtualPickups::Update();
 ***
 
 

@@ -11,7 +11,7 @@
 #Const C_ItemLandmarkTag "Wordle_Item"
 
 
-declare Integer[CSmPlayer] G_IsSuccess;
+declare Integer[Text] G_IsSuccess;
 declare Boolean G_IsComplete;
 
 Boolean IsComplete() {
@@ -60,13 +60,13 @@ Void OnEnterTest(CSmPlayer Player, Text Tag) {
 	}
 	
 	if (Tag == C_SuccessLandmarkTag_1) {
-		G_IsSuccess[Player] = 1;
+		G_IsSuccess[Player.User.Login] = 1;
 	} else if (Tag == C_SuccessLandmarkTag_2) {
-		G_IsSuccess[Player] = 2;
+		G_IsSuccess[Player.User.Login] = 2;
 	} else if (Tag == C_SuccessLandmarkTag_3) {
-		G_IsSuccess[Player] = 3;
+		G_IsSuccess[Player.User.Login] = 3;
 	} else if (Tag == C_SuccessLandmarkTag_4) {
-		G_IsSuccess[Player] = 4;
+		G_IsSuccess[Player.User.Login] = 4;
 	}
 
 	declare Boolean isSuccess1 = False;
@@ -94,7 +94,7 @@ Void OnEnterTest(CSmPlayer Player, Text Tag) {
 }
 
 Void OnLeaveTest(CSmPlayer Player) {
-	G_IsSuccess[Player] = 0;
+	G_IsSuccess[Player.User.Login] = 0;
 }
 
 Void OnRespawn(CSmPlayer Player) {

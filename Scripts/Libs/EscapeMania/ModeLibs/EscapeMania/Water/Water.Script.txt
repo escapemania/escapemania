@@ -9,7 +9,7 @@
 #Const C_MediaTrackerClip "Water"
 #Const C_MediaTrackerPriority 2
 
-declare Boolean[CSmPlayer] G_InWater;
+declare Boolean[Text] G_InWater;
 declare Boolean G_IsComplete;
 
 Void Init() {
@@ -25,9 +25,8 @@ Void ResetPuzzle() {
 		}
 	}
 	
-	foreach (Player => InWater in G_InWater) {
-		MediaTracker::UnsetMediaTracker(Player, C_MediaTrackerPriority);
-		G_InWater[Player] = False;
+	foreach (PlayerLogin => InWater in G_InWater) {
+		G_InWater[PlayerLogin] = False;
 	}
 }
 
@@ -49,10 +48,7 @@ Void CompletePuzzle() {
 	}
 
 	// Tell players something is happening
-	foreach (Player in Players) {
-		declare UI = UIManager.GetUI(Player);
-		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
-	}
+	UIManager.UIAll.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
 }
 
 Void OnChange(CSmPlayer Player, Boolean GoesInside) {
@@ -61,7 +57,7 @@ Void OnChange(CSmPlayer Player, Boolean GoesInside) {
 	}
 
 	declare Integer countInWater = 0;
-	foreach (Player => InWater in G_InWater) {
+	foreach (PlayerLogin => InWater in G_InWater) {
 		if (InWater) {
 			countInWater += 1;
 		}
@@ -101,7 +97,7 @@ Boolean CanBreath(CSmPlayer Player) {
 }
 
 Void OnWaterEnd(CSmPlayer Player) {
-	if (!CanBreath(Player) && G_InWater.get(Player, False)) {
+	if (!CanBreath(Player) && G_InWater.get(Player.User.Login, False)) {
 		RoomsRequestRespawn::RequestRespawn(Player);
 		declare UI = UIManager.GetUI(Player);
 		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
@@ -109,9 +105,9 @@ Void OnWaterEnd(CSmPlayer Player) {
 }
 
 Void OnRespawn(CSmPlayer Player) {
-	if (G_InWater.get(Player, False)) {
+	if (G_InWater.get(Player.User.Login, False)) {
 		MediaTracker::UnsetMediaTracker(Player, C_MediaTrackerPriority);
-		G_InWater[Player] = False;
+		G_InWater[Player.User.Login] = False;
 		OnChange(Player, False);
 	}
 }
@@ -120,7 +116,7 @@ Void OnEnterWater(CSmPlayer Player) {
 	if (!CanBreath(Player)) {
 		MediaTracker::SetMediaTracker(Player, C_MediaTrackerClip, C_MediaTrackerPriority);
 	}
-	G_InWater[Player] = True;
+	G_InWater[Player.User.Login] = True;
 	OnChange(Player, True);
 }
 

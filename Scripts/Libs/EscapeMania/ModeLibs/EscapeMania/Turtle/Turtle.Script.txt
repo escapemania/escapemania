@@ -4,7 +4,7 @@
 #Const C_MediaTracker "Turtle"
 #Const C_MediaTrackerPriority 3
 
-declare Boolean[CSmPlayer] G_InTurtle;
+declare Boolean[Text] G_InTurtle;
 declare Boolean G_IsComplete;
 
 Void CompletePuzzle() {
@@ -40,11 +40,11 @@ Void OnEnterTest(CSmPlayer Player) {
 	}
 	
 	if (Player.UpDirection.Y < 0) {
-		G_InTurtle[Player] = True;
+		G_InTurtle[Player.User.Login] = True;
 	}
 	
 	declare Integer countInTurtle = 0;
-	foreach (Player => InTurtle in G_InTurtle) {
+	foreach (PlayerLogin => InTurtle in G_InTurtle) {
 		if (InTurtle) {
 			countInTurtle += 1;
 		}
@@ -54,7 +54,7 @@ Void OnEnterTest(CSmPlayer Player) {
 		CompletePuzzle();
 	} else {
 		declare Text HintColor = "";
-		if (G_InTurtle.get(Player, False)) {
+		if (G_InTurtle.get(Player.User.Login, False)) {
 			HintColor = "$2f0";
 		}
 		declare UI = UIManager.GetUI(Player);
@@ -63,7 +63,7 @@ Void OnEnterTest(CSmPlayer Player) {
 }
 
 Void OnLeaveTest(CSmPlayer Player) {
-	G_InTurtle[Player] = False;
+	G_InTurtle[Player.User.Login] = False;
 }
 
 Void OnRespawn(CSmPlayer Player) {

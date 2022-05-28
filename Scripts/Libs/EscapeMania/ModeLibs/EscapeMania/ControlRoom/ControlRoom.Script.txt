@@ -12,10 +12,7 @@ declare Boolean G_IsComplete;
 
 Void CompleteBadge() {
 	G_IsGateLocked = False;
-	foreach (Player in Players) {
-		declare UI = UIManager.GetUI(Player);
-		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "$2f0");
-	}
+	UIManager.UIAll.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "$2f0");
 }
 
 Void ResetBadge() {
@@ -53,6 +50,12 @@ Void CompletePuzzle() {
 		SetPlayer_Delayed_GravityCoef(Player, 0.3);
 		declare UI = UIManager.GetUI(Player);
 		UI.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
+	}
+}
+
+Void OnPlayerSpawn(CSmPlayer Player) {
+	if (G_IsComplete) {
+		SetPlayer_Delayed_GravityCoef(Player, 0.3);
 	}
 }
 

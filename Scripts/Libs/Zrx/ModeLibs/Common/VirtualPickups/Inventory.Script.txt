@@ -126,7 +126,6 @@ Void Loop() {
 
 /**
  * Returns the manialink for the inventory.
- * TODO: Might make this more customizable in the future, i.e. register actions by the gamemode, amount of rows, amount of columns, pagination, ...
  */
 Text GetManialink() {
 	return """

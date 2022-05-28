@@ -8,17 +8,17 @@
 	K_MediaTrackerPriority[] Items;
 }
 
-declare K_MediaTrackerPriorities[CSmPlayer] G_MediaTrackers;
+declare K_MediaTrackerPriorities[Text] G_MediaTrackers;
 
 Void ApplyMediaTracker(CSmPlayer Player) {
-	if (!G_MediaTrackers.existskey(Player)) {
-		G_MediaTrackers[Player] = K_MediaTrackerPriorities { Items = [] };
+	if (!G_MediaTrackers.existskey(Player.User.Login)) {
+		G_MediaTrackers[Player.User.Login] = K_MediaTrackerPriorities { Items = [] };
 	}
 
 	declare Integer MaxPriority = -1;
 	declare Text MaxMediaTracker = "";
 	
-	foreach (Item in G_MediaTrackers[Player].Items) {
+	foreach (Item in G_MediaTrackers[Player.User.Login].Items) {
 		if (Item.Priority > MaxPriority) {
 			MaxPriority = Item.Priority;
 			MaxMediaTracker = Item.MediaTracker;
@@ -31,13 +31,13 @@ Void ApplyMediaTracker(CSmPlayer Player) {
 }
 
 Void RemoveWithPriority(CSmPlayer Player, Integer Priority) {
-	if (!G_MediaTrackers.existskey(Player)) {
-		G_MediaTrackers[Player] = K_MediaTrackerPriorities { Items = [] };
+	if (!G_MediaTrackers.existskey(Player.User.Login)) {
+		G_MediaTrackers[Player.User.Login] = K_MediaTrackerPriorities { Items = [] };
 	}
 
 	declare Integer IndexToRemove = -1;
 	declare Integer i = 0;
-	foreach (Item in G_MediaTrackers[Player].Items) {
+	foreach (Item in G_MediaTrackers[Player.User.Login].Items) {
 		if (Item.Priority == Priority) {
 			IndexToRemove = i;
 			break;
@@ -46,27 +46,31 @@ Void RemoveWithPriority(CSmPlayer Player, Integer Priority) {
 	}
 
 	if (IndexToRemove != -1) {
-		G_MediaTrackers[Player].Items.removekey(IndexToRemove);
+		G_MediaTrackers[Player.User.Login].Items.removekey(IndexToRemove);
 	}
 }
 
 Void SetMediaTracker(CSmPlayer Player, Text MediaTracker, Integer Priority) {
-	if (!G_MediaTrackers.existskey(Player)) {
-		G_MediaTrackers[Player] = K_MediaTrackerPriorities { Items = [] };
+	if (!G_MediaTrackers.existskey(Player.User.Login)) {
+		G_MediaTrackers[Player.User.Login] = K_MediaTrackerPriorities { Items = [] };
 	}
 	
 	RemoveWithPriority(Player, Priority);
 	declare K_MediaTrackerPriority Item = K_MediaTrackerPriority { MediaTracker = MediaTracker, Priority = Priority };
-	G_MediaTrackers[Player].Items.add(Item);
+	G_MediaTrackers[Player.User.Login].Items.add(Item);
 	ApplyMediaTracker(Player);
 }
 
 Void UnsetMediaTracker(CSmPlayer Player, Integer Priority) {
-	if (!G_MediaTrackers.existskey(Player)) {
-		G_MediaTrackers[Player] = K_MediaTrackerPriorities { Items = [] };
+	if (!G_MediaTrackers.existskey(Player.User.Login)) {
+		G_MediaTrackers[Player.User.Login] = K_MediaTrackerPriorities { Items = [] };
 	}
 
 	RemoveWithPriority(Player, Priority);
+	ApplyMediaTracker(Player);
+}
+
+Void OnPlayerSpawn(CSmPlayer Player) {
 	ApplyMediaTracker(Player);
 }
 
