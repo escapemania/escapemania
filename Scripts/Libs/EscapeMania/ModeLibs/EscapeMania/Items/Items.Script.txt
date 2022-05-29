@@ -30,8 +30,12 @@
 
 declare Integer G_Item_Count;
 
-Void CreateItem(CNod Landmark, Text Type, Text Name, Text Description, Text Icon) {
+Void CreateItem(CNod Landmark, Text Type, Text NameFR, Text NameEN, Text DescriptionFR, Text DescriptionEN, Text Icon) {
 	G_Item_Count += 1;
+	
+	declare Text Name = NameEN ^ "\n$ccc" ^ NameFR;
+	declare Text Description = DescriptionEN ^ "\n\n$ccc" ^ DescriptionFR;
+	
 	declare Text PickupId = Type ^ G_Item_Count;
 	VirtualPickups::Create(PickupId);
 	switchtype (Landmark) {
@@ -85,8 +89,10 @@ Void CreateOrbItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_OrbItemType,
-		"Boule de Feu\n$cccGlowing Orb",
-		"Etrangement attirée par des cerceaux tournants...\n\n$cccIt is attracted to round moving objects...",
+		"Boule de Feu",
+		"Glowing Orb",
+		"Etrangement attirée par des cerceaux tournants...",
+		"It is attracted to round moving objects...",
 		C_OrbItemIcon
 	);
 }
@@ -99,8 +105,10 @@ Void CreateHelmetItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_HelmetItemType,
-		"Casque de Respiration\n$cccWater Breathing Helmet",
-		"Ce casque magique vous permet de respirer sous l'eau lorsqu'il est alimenté par une source d'énergie bleue.\n\n$cccThis strange helmet lets you breath under water when powered by a blue power source.",
+		"Casque de Respiration",
+		"Water Breathing Helmet",
+		"Ce casque magique vous permet de respirer sous l'eau lorsqu'il est alimenté par une source d'énergie bleue.",
+		"This strange helmet lets you breath under water when powered by a blue power source.",
 		C_HelmetItemIcon
 	);
 }
@@ -114,8 +122,10 @@ Void CreateLetterUItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_LetterU_ItemType,
-		"Tuyau en U\n$cccU Pipe",
-		"Un gros tuyau qui ressemble à la lettre U.\n\n$cccA thick U-shaped piece of pipe.",
+		"Tuyau en U",
+		"U Pipe",
+		"Un gros tuyau qui ressemble à la lettre U.",
+		"A thick U-shaped piece of pipe.",
 		C_LetterU_ItemIcon
 	);
 }
@@ -128,8 +138,10 @@ Void CreateLetterIItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_LetterI_ItemType,
-		"Tuyau en U\n$cccI Pipe",
-		"Un gros tuyau qui ressemble à la lettre I.\n\n$cccA thick I-shaped piece of pipe.",
+		"Tuyau en U",
+		"I Pipe",
+		"Un gros tuyau qui ressemble à la lettre I.",
+		"A thick I-shaped piece of pipe.",
 		C_LetterI_ItemIcon
 	);
 }
@@ -142,8 +154,10 @@ Void CreateLetterLItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_LetterL_ItemType,
-		"Tuyau en L\n$cccL Pipe",
-		"Un gros tuyau qui ressemble à la lettre L.\n\n$cccA thick L-shaped piece of pipe.",
+		"Tuyau en L",
+		"L Pipe",
+		"Un gros tuyau qui ressemble à la lettre L.",
+		"A thick L-shaped piece of pipe.",
 		C_LetterL_ItemIcon
 	);
 }
@@ -156,8 +170,10 @@ Void CreateLetterNItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_LetterN_ItemType,
-		"Tuyau en N\n$cccN Pipe",
-		"Un gros tuyau qui ressemble à la lettre N.\n\n$cccA thick N-shaped piece of pipe.",
+		"Tuyau en N",
+		"N Pipe",
+		"Un gros tuyau qui ressemble à la lettre N.",
+		"A thick N-shaped piece of pipe.",
 		C_LetterN_ItemIcon
 	);
 }
@@ -179,8 +195,10 @@ Void CreatePowerSourceItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_PowerSourceItemType,
-		"Source d'Energie Bleue\n$cccBlue Power Source",
-		"Cette source d'énergie bleue active les pouvoirs d'objets magiques.\n\n$cccThis blue power source activates magical objects.",
+		"Source d'Energie Bleue",
+		"Blue Power Source",
+		"Cette source d'énergie bleue active les pouvoirs d'objets magiques.",
+		"This blue power source activates magical objects.",
 		C_PowerSourceItemIcon
 	);
 }
@@ -193,8 +211,10 @@ Void CreateBottleItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_BottleItemType,
-		"Bouteille à la Mer\n$cccMessage in a Bottle",
-		"Les boules doivent être placées\ndans la pénombre\nen ligne droite\npour que les coins se rejoignent\n      -- Capitaine\n\n$cccThe orbs must be placed\nwhere darkness lies\nin straight lines\nfor corners to meet\n      -- Captain",
+		"Bouteille à la Mer",
+		"Message in a Bottle",
+		"Les boules doivent être placées\ndans la pénombre\nen ligne droite\npour que les coins se rejoignent\n      -- Capitaine",
+		"The orbs must be placed\nwhere darkness lies\nin straight lines\nfor corners to meet\n      -- Captain",
 		C_BottleItemIcon
 	);
 }
@@ -207,8 +227,10 @@ Void CreateKeyItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_KeyItemType,
-		"Clé Rouge\n$cccRed Key",
-		"Cette clé permet d'arrêter ce vaisseau dans la salle de contrôle. Quand le vaisseau est arrêté, le système qui génère une gravité terriène ne fonctionne plus.\n\n$cccUse this key in the control room to stop the ship. When the ship is stopped, the mechanism that enables earth-like gravity movement no longer works!",
+		"Clé Rouge",
+		"Red Key",
+		"Cette clé permet d'arrêter ce vaisseau dans la salle de contrôle. Quand le vaisseau est arrêté, le système qui génère une gravité terriène ne fonctionne plus.",
+		"Use this key in the control room to stop the ship. When the ship is stopped, the mechanism that enables earth-like gravity movement no longer works!",
 		C_KeyItemIcon
 	);
 }
@@ -221,8 +243,10 @@ Void CreateBadgeItem(CNod Landmark) {
 	CreateItem(
 		Landmark,
 		C_BadgeItemType,
-		"Brouilleur\n$cccBadge Jammer",
-		"Ce brouilleur fait malfonctionner les contrôles d'accès.\n\n$cccThis badge jams access control mechanisms it encounters.",
+		"Brouilleur",
+		"Badge Jammer",
+		"Ce brouilleur fait malfonctionner les contrôles d'accès.",
+		"This badge jams access control mechanisms it encounters.",
 		C_BadgeItemIcon
 	);
 }

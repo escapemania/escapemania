@@ -138,7 +138,7 @@ Text GetManialink() {
 		</frame>
 	</framemodel>
 
-	<frame id="tooltip" z-index="2" hidden="1">
+	<frame id="tooltip" z-index="3" hidden="1">
 		<frame id="title">
 			<quad z-index="0" size="60 14" opacity="{{{ C_TooltipOpacity }}}" halign="left" valign="top" bgcolor="000" pos="0 0"/>
 			<label z-index="1" size="58 12" text="Item name" halign="center" textfont="GameFontBlack" textsize="3" valign="center2" pos="30 -5" id="title-label"/>
