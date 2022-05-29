@@ -51,6 +51,13 @@ Void OnRespawn(CSmPlayer Player) {
 	}
 }
 
+Void OnPlayerLeave(CUser User) {
+	if (User.Login == G_CurrentPlayerLogin) {
+		ResetMediaTracker();
+		G_CurrentPlayerLogin = "";
+	}
+}
+
 Void OnEnterTunnel(CSmPlayer Player) {
 	if (!Turtle::IsComplete()) {	
 		RoomsRequestRespawn::RequestRespawn(Player);

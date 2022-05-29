@@ -102,6 +102,7 @@ Void OnPlayerSpawn(CSmPlayer Player) {
 
 Void OnPlayerLeave(CUser User) {
 	Challenge::OnPlayerLeave(User);
+	TunnelMedia::OnPlayerLeave(User);
 }
 
 ***Match_PlayLoop***
