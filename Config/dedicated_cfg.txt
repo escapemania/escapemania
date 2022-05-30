@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<dedicated>
+        <masterserver_account>
+                <login>LOGIN</login>
+                <password>PASSWORD</password>
+        </masterserver_account>
+
+        <server_options>
+                <name>EscapeMania</name>
+                <comment></comment>
+
+                <password>PASSWORD</password>
+                <password_spectator>PASSWORD</password_spectator>
+        </server_options>
+</dedicated>
