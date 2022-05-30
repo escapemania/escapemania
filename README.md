@@ -63,3 +63,54 @@ If you want to run it in the background, remove `/nodaemon`. Note that you won't
 
 Once the server is started, have the 4 players go to your club, click on the room and press `Join Room`. Enjoy!
 
+
+# How to develop locally
+
+This is way simpler as you don't need a server or any authentication.
+
+## Setup the map and files
+
+* Download all the files in this repository and extract them on `Documents\Trackmania`. Such that this file exists `C:\Users\vjeux\OneDrive\Documents\Trackmania\Scripts\Modes\Trackmania\EscapeMania.Script.txt` (note that this is using my account `vjeux`).
+* Edit the map as usual in the Trackmania editor.
+
+## Run with scripts
+
+* Instead of clicking the `Validate the track` button, in order to run with the script, you need to click on `Map Options`
+* <img width="309" alt="image" src="https://user-images.githubusercontent.com/197597/170897843-37ff522c-5a20-4237-984f-45364af4620e.png">
+* Select `Test the map with mode`
+* <img width="629" alt="image" src="https://user-images.githubusercontent.com/197597/170897892-0eb5db32-0c54-41d1-b008-f6ffab48383b.png">
+* Select `Trackmania`
+* <img width="567" alt="image" src="https://user-images.githubusercontent.com/197597/170897926-fd513302-846b-41dd-afd5-fbce274d7c65.png">
+* Select `EscapeMania.Script.txt`
+* <img width="568" alt="image" src="https://user-images.githubusercontent.com/197597/170897940-e8bb2efd-a697-45f3-b987-6b254eb2285f.png">
+* Click `Open`
+
+## Edit the code
+
+Now you are in the game with the script running!
+
+Weirdly enough, in order to edit the code, you need to be running the script and pressing `Screen Lock` button on your keyboard.
+
+* <img width="800" alt="image" src="https://user-images.githubusercontent.com/197597/170898011-43a800bb-4a53-4609-a30d-47352cd74027.png">
+* You can edit code on the left, see files and errors on the right.
+* If you want to run the new version of the code, press `Reload` and `Play` buttons
+* <img width="361" alt="image" src="https://user-images.githubusercontent.com/197597/170898060-984ad927-e2e5-4244-8222-6bf7d8c70ece.png">
+
+## Useful Tips
+
+Few things that are useful when programming in this environment:
+* Use the `log()` function to print things.
+* Press `Ctrl+G` in order to show the log menu
+* <img width="827" alt="image" src="https://user-images.githubusercontent.com/197597/170898181-831e10b5-a1d2-4495-81d4-c9cf2d13e641.png">
+
+Back in the editor, if you want to set a tag on a checkpoint
+* Press `Edit Block Properties`
+* <img width="502" alt="image" src="https://user-images.githubusercontent.com/197597/170898241-1743ec48-dae8-4920-946e-8d0ad4609cb3.png">
+* It starts showing the tags on all the checkpoints
+* <img width="500" alt="image" src="https://user-images.githubusercontent.com/197597/170898259-57d18c47-4b47-4bbd-89b6-fd0661f45a8a.png">
+* Click on a checkpoint to edit its tag
+* <img width="488" alt="image" src="https://user-images.githubusercontent.com/197597/170898315-3cece5d2-a3e6-401b-9b65-e16469c4cad5.png">
+
+`Test Mode` doesn't work where you click enter and it puts your car anywhere you want unfortunately.
+* But you can add a new spawn called `DevSpawn` to start from there.
+* <img width="912" alt="image" src="https://user-images.githubusercontent.com/197597/170898459-74e0c8e2-f382-4e5e-93b8-182187757ca1.png">
