@@ -10,7 +10,7 @@
                 <name>EscapeMania</name>
                 <comment></comment>
 
-                <password>PASSWORD</password>
-                <password_spectator>PASSWORD</password_spectator>
+                <password></password>
+                <password_spectator></password_spectator>
         </server_options>
 </dedicated>
