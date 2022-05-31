@@ -1,6 +1,9 @@
 # EscapeMania
 The first Escape Room within Trackmania!
 
+Come to our Discord if you are interested in playing it or building another Escape Room!
+* https://discord.gg/2TyyWvvJrN
+
 # How to run a game
 
 Unfortunately, it's a bit of an involved setup. Should take you about 10 minutes. It works either on Windows or Linux.
