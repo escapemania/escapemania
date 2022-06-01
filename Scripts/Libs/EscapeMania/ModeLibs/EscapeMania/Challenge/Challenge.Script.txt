@@ -24,12 +24,12 @@ Void ResetPuzzle() {
 }
 
 Void CompletePuzzle() {
-	G_IsComplete = True;
 	ResetMediaTrackers();
 	G_CurrentPlayerLogin = "";
 	if (!G_IsComplete) {
 		UIManager.UIAll.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "");
 	}
+	G_IsComplete = True;
 }
 
 Void OnEnd(CSmPlayer Player) {
