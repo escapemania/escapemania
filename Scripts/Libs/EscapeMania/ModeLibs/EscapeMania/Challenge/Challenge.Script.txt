@@ -24,6 +24,7 @@ Void ResetPuzzle() {
 }
 
 Void CompletePuzzle() {
+	G_IsComplete = True;
 	ResetMediaTrackers();
 	G_CurrentPlayerLogin = "";
 	if (!G_IsComplete) {

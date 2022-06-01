@@ -145,12 +145,18 @@ main() {
 						} else if (Event.Control == ButtonCustomCommandSend) {
 							declare Text[] CommandSplit = TL::Split(" ", TextEditCustomCommand.Value);
 							if(CommandSplit.count >= 1) {
-								SendCustomEvent("{{{CommandUtils::C_CommandPrefix}}}" ^ CommandSplit[0], CommandSplit.slice(1, CommandSplit.count - 1));
+								SendCustomEvent(
+									"{{{CommandUtils::C_CommandPrefix}}}" ^ CommandSplit[0],
+									[TL::Join(" ", CommandSplit.slice(1, CommandSplit.count - 1))]
+								);
 							}
 							TextEditCustomCommand.Value = "";
 						} else {
 							if(QuickCommands.existskey(Event.Control as CMlQuad)) {
-								SendCustomEvent("{{{CommandUtils::C_CommandPrefix}}}" ^ QuickCommands[Event.Control as CMlQuad].Value, []);
+								SendCustomEvent(
+									"{{{CommandUtils::C_CommandPrefix}}}" ^ QuickCommands[Event.Control as CMlQuad].Value,
+									[""]
+								);
 							}
 						}
 					}
@@ -167,7 +173,10 @@ main() {
 					case CMlScriptEvent::Type::EntrySubmit: {
 						declare Text[] CommandSplit = TL::Split(" ", TextEditCustomCommand.Value);
 						if(CommandSplit.count >= 1) {
-							SendCustomEvent("{{{CommandUtils::C_CommandPrefix}}}" ^ CommandSplit[0], CommandSplit.slice(1, CommandSplit.count - 1));
+							SendCustomEvent(
+								"{{{CommandUtils::C_CommandPrefix}}}" ^ CommandSplit[0],
+								[TL::Join(" ", CommandSplit.slice(1, CommandSplit.count - 1))]
+							);
 						}
 						TextEditCustomCommand.Value = "";
 					}

@@ -37,6 +37,9 @@
 #Const C_LayerName_Timer "Layer_Timer"
 #Const C_LayerName_ItemsPreload "Layer_ItemsPreload"
 
+#Setting S_TrustClientSimu False
+#Setting S_UseCrudeExtrapolation False
+
 ***Match_StartServer***
 ***
 Race::UseCppRaceProgression(False);
@@ -58,6 +61,9 @@ Layers::Attach(C_LayerName_Timer);
 Layers::Create(C_LayerName_ItemsPreload, Items::GetManialink());
 Layers::SetType(C_LayerName_ItemsPreload, CUILayer::EUILayerType::Normal);
 Layers::Attach(C_LayerName_ItemsPreload);
+
+UsePvPCollisions = True;
+UsePvECollisions = True;
 ***
 
 ***Match_StartMap***
@@ -98,6 +104,9 @@ Void OnPlayerSpawn(CSmPlayer Player) {
 	EnergyWall::OnPlayerSpawn(Player);
 	MediaTracker::OnPlayerSpawn(Player);
 	ControlRoom::OnPlayerSpawn(Player);
+	
+	Player.TrustClientSimu = False;
+	Player.UseCrudeExtrapolation = False;
 }
 
 Void OnPlayerLeave(CUser User) {
@@ -134,23 +143,14 @@ foreach (Command in ModeCommands::GetPendingCommands()) {
 			Users_SetNbFakeUsers(Command.ValueInteger, 0);
     }
     case "Command_message": {
+			UIManager.UIAll.SendChat(Command.ValueText);
 			UIManager.UIAll.QueueMessage(3000, 1, CUIConfig::EMessageDisplay::Big, Command.ValueText);
     }
-		case "Command_collision": {
+		case "Command_cam7": {
 			if (Command.ValueText == "enable") {
-				UsePvPCollisions = True;
-				UsePvECollisions = True;
-				foreach (Player in Players) {
-					Player.TrustClientSimu = False;
-					Player.UseCrudeExtrapolation = False;
-				}
+				UIManager.UIAll.PlayerDisableFreeCam = False;
 			} else if (Command.ValueText == "disable") {
-				UsePvPCollisions = False;
-				UsePvECollisions = False;
-				foreach (Player in Players) {
-					Player.TrustClientSimu = True;
-					Player.UseCrudeExtrapolation = True;
-				}
+				UIManager.UIAll.PlayerDisableFreeCam = True;
 			}
 		}
     case "Command_complete": {

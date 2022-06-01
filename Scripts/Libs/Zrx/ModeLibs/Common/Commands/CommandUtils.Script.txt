@@ -19,12 +19,14 @@
 /**
 *		Transfroms a Text and Params into a Command
 */
-K_Command FromNameAndParams(Text Name, Text[] Params, Text Source) {
+K_Command FromNameAndParams(Text Name, Text JoinedParams, Text Source) {
 	declare K_Command Command;
 
 	Command.Name = Name;
 	Command.Source = Source;
-	Command.ValueText			= TL::Join(" ", Params);
+	Command.ValueText	= JoinedParams;
+	
+	declare Text[] Params = TL::Split(" ", JoinedParams);
 
 	switch(Params.count) {
 		case 1: {
@@ -58,7 +60,7 @@ K_Command FromText(Text CommandText, Text Source) {
 	declare K_Command Command;
 	declare Text[] CommandSplit = TL::Split(" ", CommandText);
 	if(CommandSplit.count >= 1) {
-		Command = FromNameAndParams(CommandSplit[0], CommandSplit.slice(1, CommandSplit.count - 1), Source);
+		Command = FromNameAndParams(CommandSplit[0], TL::Join(" ", CommandSplit.slice(1, CommandSplit.count - 1)), Source);
 	}
 	return Command;
 }
@@ -89,5 +91,5 @@ K_Command FromEvent(CUIConfigEvent Event) {
 	if(Event.UI != Null && GetPlayer(Event.UI) != Null) {
 		Source = GetPlayer(Event.UI).User.Login;
 	}
-	return FromNameAndParams(Event.CustomEventType, Event.CustomEventData, Source);
+	return FromNameAndParams(Event.CustomEventType, Event.CustomEventData[0], Source);
 }
