@@ -18,6 +18,22 @@
 declare Integer[Text] G_IsSuccess;
 declare Boolean G_IsComplete;
 
+Text[] GetHints() {
+	declare Text[] Hints;
+	if (G_IsComplete) {
+		return Hints;
+	}
+
+	Hints.add("Do you notice the symbols on-top of the wall with the trees?");
+	Hints.add("The symbols on-top of the wall look like the ones inside of the room.");
+	Hints.add("When you activate the two symbols, they intersect into a tree.");
+	Hints.add("Palm Tree [P], Christmas Tree [Q], N-Golo [N] and Automn Tree [B] are the solution!");
+	Hints.add("<END>");
+
+	return Hints;
+}
+
+
 Void ResetPuzzle() {
 	G_IsSuccess.clear();
 	G_IsComplete = False;

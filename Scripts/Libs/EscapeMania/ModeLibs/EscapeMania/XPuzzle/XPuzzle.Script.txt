@@ -28,6 +28,12 @@ Void ResetPuzzle() {
 }
 
 Boolean IsPuzzleComplete() {
+	foreach (Pickup in VirtualPickups::GetAll()) {
+		if (Items::IsHelmetItem(Pickup)) {
+			return True;
+		}
+	}
+
 	foreach (Landmark in MapLandmarks) {
 		if (Landmark.Tag == C_DropSuccessLandmarkTag) {
 			if (VirtualPickups::GetByLandmark(Landmark).count == 0) {
@@ -37,6 +43,38 @@ Boolean IsPuzzleComplete() {
 	}
 	return True;
 }
+
+
+Text[] GetHints() {
+	declare Text[] Hints;
+	if (IsPuzzleComplete()) {
+		return Hints;
+	}
+
+	Hints.add("The next puzzle you want to solve is the checkerboard.");
+	Hints.add("Did you read the message in the bottle? You can use your mouse over it.");
+
+	declare Integer MissingCount = 0;
+	foreach (Landmark in MapLandmarks) {
+		if (Landmark.Tag == C_PickupLandmarkTag) {
+			if (VirtualPickups::GetByLandmark(Landmark).count > 0) {
+				MissingCount += 1;
+			}
+		}
+	}
+	
+	if (MissingCount > 0) {
+		Hints.add("Did you find all the orbs hidden in the rooms?");	
+		Hints.add("You are missing " ^ MissingCount ^ " hidden orb!");
+	}
+	
+	Hints.add("The message in the bottle tells you how to place the orbs.");
+	Hints.add("Place the orbs so that the two diagonals squares each have an orb!");
+	Hints.add("<END>");
+
+	return Hints;
+}
+
 
 Void CompletePuzzle() {
 	// Destroy Orb Items and Helmet Items

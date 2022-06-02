@@ -33,9 +33,6 @@ declare Integer G_Item_Count;
 Void CreateItem(CNod Landmark, Text Type, Text NameFR, Text NameEN, Text DescriptionFR, Text DescriptionEN, Text Icon) {
 	G_Item_Count += 1;
 	
-	declare Text Name = NameEN ^ "\n$ccc" ^ NameFR;
-	declare Text Description = DescriptionEN ^ "\n\n$ccc" ^ DescriptionFR;
-	
 	declare Text PickupId = Type ^ G_Item_Count;
 	VirtualPickups::Create(PickupId);
 	switchtype (Landmark) {
@@ -52,8 +49,10 @@ Void CreateItem(CNod Landmark, Text Type, Text NameFR, Text NameEN, Text Descrip
 	
 	VirtualPickups::SetMarkerConfig(PickupId, MarkerConfig);
 	VirtualPickups::SetCustomDataText(PickupId, Inventory::C_PickupCustomDataKey_ImageUrl, Icon);
-	VirtualPickups::SetCustomDataText(PickupId, Inventory::C_PickupCustomDataKey_Name, Name);
-	VirtualPickups::SetCustomDataText(PickupId, Inventory::C_PickupCustomDataKey_Description, Description);	
+	VirtualPickups::SetCustomDataText(PickupId, Inventory::C_PickupCustomDataKey_NameFR, NameFR);
+	VirtualPickups::SetCustomDataText(PickupId, Inventory::C_PickupCustomDataKey_NameEN, NameEN);
+	VirtualPickups::SetCustomDataText(PickupId, Inventory::C_PickupCustomDataKey_DescriptionFR, DescriptionFR);	
+	VirtualPickups::SetCustomDataText(PickupId, Inventory::C_PickupCustomDataKey_DescriptionEN, DescriptionEN);	
 }
 
 Text GetPickupType(VirtualPickups::K_VirtualPickup Pickup) {

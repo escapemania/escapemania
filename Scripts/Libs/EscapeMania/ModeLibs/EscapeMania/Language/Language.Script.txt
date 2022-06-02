@@ -1,0 +1,46 @@
+#Const C_FRTag "Language_FR"
+#Const C_ENTag "Language_EN"
+
+declare Text G_CurrentLanguage;
+
+Text GetCurrentLanguage() {
+	return G_CurrentLanguage;
+}
+
+Text T(Text EN, Text FR) {
+	if (G_CurrentLanguage == "EN") {
+		return EN;
+	}
+	if (G_CurrentLanguage == "FR") {
+		return FR;
+	}
+	return EN;
+}
+
+Void Init() {
+	G_CurrentLanguage = "EN";
+}
+
+Void SetLanguage(Text Language) {
+	G_CurrentLanguage = Language;
+	declare Text Description = T(
+		"The escape is going to happen in English",
+		"L'escape va se dérouler en Français"
+	);
+	UIManager.UIAll.SendChat(Description);
+	UIManager.UIAll.QueueMessage(3000, 1, CUIConfig::EMessageDisplay::Big, Description);
+}
+
+Void Loop() {
+	foreach (Event in PendingEvents) {
+		switch (Event.Type) {
+			case CSmModeEvent::EType::OnPlayerTriggersWaypoint: {
+				if (Event.Landmark.Tag == C_FRTag) {
+					SetLanguage("FR");
+				} else if (Event.Landmark.Tag == C_ENTag) {
+					SetLanguage("EN");
+				}
+			}
+		}
+	}
+}

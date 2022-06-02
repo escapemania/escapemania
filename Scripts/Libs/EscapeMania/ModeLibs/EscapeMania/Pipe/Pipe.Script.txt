@@ -14,8 +14,9 @@
 #Const C_DropLLandmarkTag "Pipe_Drop_Letter_L"
 #Const C_DropNLandmarkTag "Pipe_Drop_Letter_N"
 
+declare Boolean G_IsComplete;
 
-Boolean IsPuzzleComplete() {
+Text FirstMissingLetter() {
 	foreach (Landmark in MapLandmarks) {
 		if (TL::StartsWith(C_PipeSuccessLandmarkTagPrefix, Landmark.Tag)) {
 			declare VirtualPickups::K_VirtualPickup[] LandmarkPickups = VirtualPickups::GetByLandmark(Landmark);
@@ -26,11 +27,47 @@ Boolean IsPuzzleComplete() {
 				Landmark.Tag == C_DropLLandmarkTag && !Items::IsLetterLItem(LandmarkPickups[0]) ||
 				Landmark.Tag == C_DropNLandmarkTag && !Items::IsLetterNItem(LandmarkPickups[0])
 			) {
-				return False;
+				if (Landmark.Tag == C_DropULandmarkTag) return "U";
+				if (Landmark.Tag == C_DropILandmarkTag) return "I";
+				if (Landmark.Tag == C_DropLLandmarkTag) return "L";
+				if (Landmark.Tag == C_DropNLandmarkTag) return "N";
 			}
 		}
 	}
-	return True;
+	return "";
+}
+
+Boolean IsPuzzleComplete() {
+	foreach (Pickup in VirtualPickups::GetAll()) {
+		if (Items::IsPowerSourceItem(Pickup)) {
+			return True;
+		}
+	}
+
+	return FirstMissingLetter() == "";
+}
+
+Text[] GetHints() {
+	declare Text[] Hints;
+	if (IsPuzzleComplete()) {
+		return Hints;
+	}
+
+	Hints.add("The next puzzle you want to solve is the red pipes on the wall.");
+	Hints.add("Did you find the items with letters U, I, L, N?");
+	Hints.add("How could the letters be used on the wall with pipes?");
+	Hints.add("Do you see a path from Green to Red?");
+	Hints.add("You need to place the letters corresponding to the missing pipes.");
+
+	switch (FirstMissingLetter()) {
+		case "U": Hints.add("You need to place the letter U in the 5th slot from the left!");
+		case "I": Hints.add("You need to place the letter I in the 7th slot from the left!");
+		case "L": Hints.add("You need to place the letter L in the 3th slot from the left!");
+		case "N": Hints.add("You need to place the letter N in the 4th slot from the left!");
+	}
+	Hints.add("<END>");
+
+	return Hints;
 }
 
 Void ResetPuzzle() {

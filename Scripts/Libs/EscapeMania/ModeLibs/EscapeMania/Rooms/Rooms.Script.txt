@@ -1,6 +1,8 @@
 
 #Include "Libs/EscapeMania/ModeLibs/EscapeMania/Challenge/Challenge.Script.txt" as Challenge
 #Include "Libs/EscapeMania/ModeLibs/EscapeMania/Timer/Timer.Script.txt" as Timer
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Hints/Hints.Script.txt" as HintsModule
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Language/Language.Script.txt" as Language
 
 #Const C_Room1LandmarkTag "Room1_Spawn"
 #Const C_Room2LandmarkTag "Room2_Spawn"
@@ -10,6 +12,62 @@ declare CMapSpawn G_Room1Spawn;
 declare CMapSpawn G_Room2Spawn;
 
 declare Integer[Text] G_CurrentRoom;
+
+Integer GetHighestRoom() {
+	declare Integer HighestRoom = 0;
+	foreach (PlayerLogin => CurrentRoom in G_CurrentRoom) {
+		if (CurrentRoom > HighestRoom) {
+			HighestRoom = CurrentRoom;
+		}
+	}
+	return HighestRoom;
+}
+
+Text[] GetHintsRoom0() {
+	declare Text[] Hints;
+
+	if (GetHighestRoom() != 0) {
+		return Hints;
+	}
+
+	Hints.add("Go to the first checkpoint to start to escape!");
+	Hints.add("<END>");
+
+	return Hints;
+}
+
+Text[] GetHintsRoom1() {
+	declare Text[] Hints;
+
+	if (GetHighestRoom() != 1) {
+		return Hints;
+	}
+
+	Hints.add("You want to find how to go to the next room.");
+	Hints.add("Did you notice you have both a Helmet and a Blue Power Source?");
+	Hints.add("Both items combined allow you to breath underwater.");
+	Hints.add("Go to the water tank and swim to the next room!");
+	Hints.add("<END>");
+
+	return Hints;
+}
+
+Text[] GetHintsRoom2() {
+	declare Text[] Hints;
+
+	if (GetHighestRoom() != 2) {
+		return Hints;
+	}
+
+	Hints.add("Your last challenge is to find the exit.");
+	Hints.add("Did you notice the gravity is much weaker?");
+	Hints.add("Do you remember a place so far away you couldn't reach before?");
+	Hints.add("Go back to the first room through the hole after the magnet.");
+	Hints.add("Jump over the room with the checkerboard to exit!");
+	Hints.add("<END>");
+
+	return Hints;
+}
 
 Void ResetPuzzle(Integer Room) {
 	foreach (PlayerLogin => CurrentRoom in G_CurrentRoom) {
@@ -57,6 +115,17 @@ Void OnFinish(CSmPlayer Player) {
 	
 	if (!HasFinished) {
 		Timer::Stop();
+		declare Integer HintsCount = HintsModule::GetHintsCount();
+		declare Text S = "";
+		if (HintsCount > 1) {
+			S = "s";
+		}
+
+		declare Text Victory = Language::T(
+			"Congratulations, you escaped in " ^ Timer::GetTimeText() ^ " with " ^ HintsCount ^ " hint" ^ S ^ "!",
+			"Bravo, vous vous êtes échappés en " ^ Timer::GetTimeText() ^ " avec " ^ HintsCount ^ " indices" ^ S ^ " !"
+		);
+		UIManager.UIAll.SendChat(Victory);
 	}
 }
 

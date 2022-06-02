@@ -1,0 +1,10 @@
+
+Void OnStartServer() {
+	UsePvPCollisions = True;
+	UsePvECollisions = True;
+}
+
+Void OnPlayerSpawn(CSmPlayer Player) {
+	Player.TrustClientSimu = False;
+	Player.UseCrudeExtrapolation = False;
+}

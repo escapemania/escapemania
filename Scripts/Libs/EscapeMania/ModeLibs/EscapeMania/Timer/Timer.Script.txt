@@ -32,7 +32,7 @@ Text Pad0(Integer Int) {
 	return Str;
 }
 
-Void Loop() {
+Text GetTimeText() {
 	declare Text Output = "";
 	if (G_Start > 0) {
 		declare Current = Now;
@@ -50,7 +50,11 @@ Void Loop() {
 			Output = Pad0(Hours) ^ ":" ^ Output;
 		}
 	}
-	
+	return Output;
+}
+
+Void Loop() {
+	declare Text Output = GetTimeText();
 	foreach (Player in Players) {
 		declare netwrite Text TimerText for Player;
 		TimerText = Output;

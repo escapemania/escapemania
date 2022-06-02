@@ -10,6 +10,22 @@
 #Include "TextLib" as TL
 
 declare Text G_CurrentPlayerLogin;
+declare Boolean G_HasEnteredOnce;
+
+Text[] GetHints() {
+	declare Text[] Hints;
+	if (G_HasEnteredOnce) {
+		return Hints;
+	}
+
+	Hints.add("The next puzzle you want to solve is the trees.");
+	Hints.add("There is an opening in the wall with the trees, how do you get there?");
+	Hints.add("Go under the some hole between the small slope and the quarter-pipe wall next to the security camera room!");
+	Hints.add("<END>");
+
+	return Hints;
+}
+
 
 Void ResetMediaTracker() {
 	foreach (Player in Players) {
@@ -74,10 +90,12 @@ Void OnEnterTunnel(CSmPlayer Player) {
 	}
 	
 	G_CurrentPlayerLogin = Player.User.Login;
+	G_HasEnteredOnce = True;
 }
 
 Void Init() {
 	G_CurrentPlayerLogin = "";
+	G_HasEnteredOnce = False;
 }
 
 Void Loop() {

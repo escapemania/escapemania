@@ -11,6 +11,24 @@
 declare Text G_CurrentPlayerLogin;
 declare Boolean G_IsComplete;
 declare CMapLandmark G_SpawnLocation;
+declare Boolean G_HasEnteredOnce;
+
+Text[] GetHints() {
+	declare Text[] Hints;
+	if (G_IsComplete) {
+		return Hints;
+	}
+
+	Hints.add("The next puzzle you want to solve is the place with the security camera.");
+	if (!G_HasEnteredOnce) {
+		Hints.add("You need to find the entrance.");
+		Hints.add("The entrance is on the wall forward towards the right of the small slope!");
+	}
+	Hints.add("You need to go through the challenge guided by your friends!");
+	Hints.add("<END>");
+
+	return Hints;
+}
 
 Void ResetMediaTrackers() {
 	foreach (Player in Players) {
@@ -64,6 +82,7 @@ Void OnEntrance(CSmPlayer Player) {
 		return;
 	}
 
+	G_HasEnteredOnce = True;
 	G_CurrentPlayerLogin = Player.User.Login;
 	RoomsRequestRespawn::RequestRespawnAtLocation(Player, G_SpawnLocation);
 	MediaTracker::SetMediaTracker(Player, C_MediaTrackerPlayer, C_MediaTrackerPriority);
@@ -84,6 +103,7 @@ Void OnRespawn(CSmPlayer Player, CMapLandmark Location) {
 Void Init() {
 	G_CurrentPlayerLogin = "";
 	G_IsComplete = False;
+	G_HasEnteredOnce = False;
 	
 	foreach (Landmark in MapLandmarks) {
 		if (Landmark.Tag == C_SpawnLandmarkTag) {

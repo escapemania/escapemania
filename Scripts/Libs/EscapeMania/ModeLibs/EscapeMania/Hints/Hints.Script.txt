@@ -1,0 +1,46 @@
+
+#Include "TextLib" as TL
+
+declare Boolean[Text] G_HintsAlreadyDisplayed;
+declare Integer G_HintsCount;
+
+Integer GetHintsCount() {
+	return G_HintsCount;
+}
+
+Text[] ConcatHints(Text[][] HintArrayArray) {
+	declare Text[] Result;
+	
+	foreach (HintArray in HintArrayArray) {
+		foreach (Hint in HintArray) {
+			Result.add(Hint);
+		}
+	}
+	
+	return Result;
+}
+
+Text GetHintToDisplay(Text[][] HintArrayArray) {
+	declare Text[] Hints = ConcatHints(HintArrayArray);
+	foreach (Hint in Hints) {
+		if (Hint == "<END>") {
+			break;
+		}
+		if (TL::EndsWith("!", Hint) || !G_HintsAlreadyDisplayed.get(Hint, False)) {
+			G_HintsAlreadyDisplayed[Hint] = True;
+			return Hint;
+		}
+	}
+	return "No more hints... You have all the information you need.";
+}
+
+Void Init() {
+	G_HintsCount = 0;
+}
+
+Void SendHint(Text[][] HintArrayArray) {
+	declare Text Hint = GetHintToDisplay(HintArrayArray);
+	UIManager.UIAll.SendChat(Hint);
+	UIManager.UIAll.QueueMessage(3000, 1, CUIConfig::EMessageDisplay::Big, Hint);
+	G_HintsCount += 1;
+}

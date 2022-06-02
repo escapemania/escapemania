@@ -16,6 +16,24 @@ Void Init() {
 	G_IsComplete = False;
 }
 
+Text[] GetHints() {
+	declare Text[] Hints;
+	if (G_IsComplete) {
+		return Hints;
+	}
+
+	Hints.add("The next puzzle you want to solve is the water tank.");
+	Hints.add("Did you notice a  when you fall in the water?");
+	Hints.add("There are formulas on the billboard, what could they mean?");
+	Hints.add("How can you get the bottle to be closer to the surface?");
+	Hints.add("Jumping in the water can raise the water level on the connected tank.");
+	Hints.add("You need to have multiple people jumping in the water at the same time.");
+	Hints.add("Have 3 people jump in the water and the last one take the bottle!");
+	Hints.add("<END>");
+
+	return Hints;
+}
+
 Void ResetPuzzle() {
 	Init();
 	// Destroy Bottle Items

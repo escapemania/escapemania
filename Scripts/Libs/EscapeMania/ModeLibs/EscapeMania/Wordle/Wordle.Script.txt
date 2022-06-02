@@ -9,13 +9,45 @@
 #Const C_SuccessLandmarkTag_3 "Wordle_Success_3"
 #Const C_SuccessLandmarkTag_4 "Wordle_Success_4"
 #Const C_ItemLandmarkTag "Wordle_Item"
+#Const C_Clue1LandmarkTag "Wordle_Clue1"
+#Const C_Clue2LandmarkTag "Wordle_Clue2"
 
 
 declare Integer[Text] G_IsSuccess;
 declare Boolean G_IsComplete;
+declare Boolean G_FoundClue1;
+declare Boolean G_FoundClue2;
 
 Boolean IsComplete() {
 	return G_IsComplete;
+}
+
+Text[] GetHints() {
+	declare Text[] Hints;
+	if (G_IsComplete) {
+		return Hints;
+	}
+
+	Hints.add("The next puzzle you want to solve is the word game.");
+	if (!G_FoundClue1) {
+		Hints.add("You are missing a clue... Search more.");
+		Hints.add("The clue is somewhere in the rocks...");
+		Hints.add("The clue is in the rocks on the left of the turtle's top left's leg!");
+	}
+	if (!G_FoundClue2) {
+		Hints.add("You are missing a clue... Search more...");
+		Hints.add("The clue is somewhere next to the turtle...");
+		Hints.add("The clue is under the turtle's right side!");
+	}
+	Hints.add("Did you ever play Wordle?");
+	Hints.add("Green means that the letter is in the right place, yellow in another place, grey the letter isn't present.");
+	Hints.add("There's already someone on the letter A... And you are 4...");
+	Hints.add("You are looking for a 5 letter word.");
+	Hints.add("?AMER");
+	Hints.add("The word is GAMER, enter it by placing each player next to the appropriate letter!");
+	Hints.add("<END>");
+
+	return Hints;
 }
 
 Void ResetPuzzle() {
@@ -103,6 +135,8 @@ Void OnRespawn(CSmPlayer Player) {
 
 Void Init() {
 	G_IsComplete = False;
+	G_FoundClue1 = False;
+	G_FoundClue2 = False;
 }
 
 Void Loop() {
@@ -120,6 +154,10 @@ Void Loop() {
 							VirtualPickups::SetPlayer(Pickup.Id, Event.Player);
 						}
 					}
+				} else if (Event.Landmark.Tag == C_Clue1LandmarkTag) {
+					G_FoundClue1 = True;
+				} else if (Event.Landmark.Tag == C_Clue2LandmarkTag) {
+					G_FoundClue2 = True;
 				} else {
 					OnLeaveTest(Event.Player);
 				}

@@ -21,20 +21,8 @@
 
 declare Integer G_CurrentStep;
 
-
-Void Init() {
-	G_CurrentStep = 0;
-}
-
-Void ResetPuzzle() {
-	// Destroy Letter Items
-	foreach (Pickup in VirtualPickups::GetAll()) {
-		if (Items::IsLetterItem(Pickup)) {
-			VirtualPickups::Destroy(Pickup.Id);
-		}
-	}
-
-	Init();
+Boolean IsPuzzleComplete() {
+	return G_CurrentStep == 8;
 }
 
 Boolean IsCorrect(Integer step, Text landmark) {
@@ -60,6 +48,40 @@ Text GetHintColor(Integer step) {
 	if (step == 6) return C_Hex_Green;
 	if (step == 7) return C_Hex_Blue;
 	return "";
+}
+
+Text[] GetHints() {
+	declare Text[] Hints;
+	if (IsPuzzleComplete()) {
+		return Hints;
+	}
+
+	Hints.add("The next puzzle you want to solve is the colored arc shaped slots in the walls.");
+	Hints.add("Did you find the 4 colored arc shaped slots in the walls?");
+	Hints.add("When you go into one, a color pops up, why do you think that is?");
+	Hints.add("Only one should be pressed at the same time.");
+	Hints.add("This is a pattern: going into one tells you the color of the next one to go to.");
+
+	Hints.add("You are at step " ^ (G_CurrentStep + 1) ^ "/9. Activate " ^ GetHintColor(G_CurrentStep) ^ "$z next!");
+	Hints.add("<END>");
+
+	return Hints;
+}
+
+
+Void Init() {
+	G_CurrentStep = 0;
+}
+
+Void ResetPuzzle() {
+	// Destroy Letter Items
+	foreach (Pickup in VirtualPickups::GetAll()) {
+		if (Items::IsLetterItem(Pickup)) {
+			VirtualPickups::Destroy(Pickup.Id);
+		}
+	}
+
+	Init();
 }
 
 Void DisplayHint(Text hintColor, CSmPlayer player) {
@@ -102,7 +124,7 @@ Void CompletePuzzle() {
 }
 
 Void OnLandmark(Text landmark, CSmPlayer player) {
-	if (G_CurrentStep == 8) {
+	if (IsPuzzleComplete()) {
 		return;
 	}
 	

@@ -7,6 +7,21 @@
 declare Boolean[Text] G_InTurtle;
 declare Boolean G_IsComplete;
 
+Text[] GetHints() {
+	declare Text[] Hints;
+	if (G_IsComplete) {
+		return Hints;
+	}
+
+	Hints.add("The next puzzle you want to solve is the four green slots.");
+	Hints.add("Do you notice that it looks like an animal?");
+	Hints.add("The animal is a turtle...");
+	Hints.add("Have the four players go on the slots up-side down as if they were turtles!");
+	Hints.add("<END>");
+
+	return Hints;
+}
+
 Void CompletePuzzle() {
 	G_IsComplete = True;
 	

@@ -10,6 +10,50 @@
 declare Boolean G_IsGateLocked;
 declare Boolean G_IsComplete;
 
+Boolean HasPickedUpBadge() {
+	foreach (Pickup in VirtualPickups::GetAll()) {
+		if (Items::IsBadgeItem(Pickup)) {
+			return !VirtualPickups::IsOnLandmark(Pickup);
+		}
+	}
+	return False;
+}
+
+Boolean HasPickedUpKey() {
+	foreach (Pickup in VirtualPickups::GetAll()) {
+		if (Items::IsKeyItem(Pickup)) {
+			return !VirtualPickups::IsOnLandmark(Pickup);
+		}
+	}
+	return False;
+}
+
+Text[] GetHints() {
+	declare Text[] Hints;
+	if (G_IsComplete) {
+		return Hints;
+	}
+
+	Hints.add("The next puzzle you want to solve is the control room.");
+
+	if (!HasPickedUpBadge()) {
+		Hints.add("You need to pick up the badge item at the top of the dirt hill in the letters area!");
+	}
+	if (!HasPickedUpKey()) {
+		Hints.add("You need to pick up the key item at the top of the dirt hill in the letters area!");
+	}
+	
+	if (G_IsGateLocked) {
+		Hints.add("How can you open the gate to the control room?");
+		Hints.add("Have the player that holds the badge item go through the blue checkpoint!");
+	}
+	Hints.add("At the top of the control room, there's a slot for someone...");
+	Hints.add("Have the player that holds the key item go through the slot at the top of the control room!");
+	Hints.add("<END>");
+
+	return Hints;
+}
+
 Void CompleteBadge() {
 	G_IsGateLocked = False;
 	UIManager.UIAll.QueueMessage(1000, 1, CUIConfig::EMessageDisplay::Big, "$2f0");

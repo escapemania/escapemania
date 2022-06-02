@@ -20,6 +20,9 @@
 #Include "Libs/EscapeMania/ModeLibs/EscapeMania/ControlRoom/ControlRoom.Script.txt" as ControlRoom
 
 #Include "Libs/EscapeMania/ModeLibs/EscapeMania/Items/Items.Script.txt" as Items
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Hints/Hints.Script.txt" as Hints
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Collisions/Collisions.Script.txt" as Collisions
+#Include "Libs/EscapeMania/ModeLibs/EscapeMania/Language/Language.Script.txt" as Language
 
 #Include "Libs/Zrx/ModeLibs/Common/VirtualPickups/Inventory.Script.txt" as Inventory
 #Include "Libs/Zrx/ModeLibs/Common/Commands/ModeCommands.Script.txt" as ModeCommands
@@ -37,19 +40,19 @@
 #Const C_LayerName_Timer "Layer_Timer"
 #Const C_LayerName_ItemsPreload "Layer_ItemsPreload"
 
-#Setting S_TrustClientSimu False
-#Setting S_UseCrudeExtrapolation False
+#Const C_HintLandmarkTag "Hint"
 
 ***Match_StartServer***
 ***
 Race::UseCppRaceProgression(False);
 
+ModeCommands::AddAdmin("KTaOsd-lTR2zkoskETSfPA"); // vjeux
+ModeCommands::AddAdmin("W2ZNWNzVQV6z3hXuNgRMRg"); // Ze-Rax
+
 Layers::Create(C_Layer_Inventory, Inventory::GetManialink());
 Layers::SetType(C_Layer_Inventory, CUILayer::EUILayerType::Normal);
 Layers::Attach(C_Layer_Inventory);
 
-ModeCommands::AddAdmin("KTaOsd-lTR2zkoskETSfPA"); // vjeux
-ModeCommands::AddAdmin("W2ZNWNzVQV6z3hXuNgRMRg"); // Ze-Rax
 Layers::Create(C_LayerName_ModeCommands, ModeCommands::GetManialink());
 Layers::SetType(C_LayerName_ModeCommands, CUILayer::EUILayerType::Normal);
 Layers::Attach(C_LayerName_ModeCommands);
@@ -62,8 +65,7 @@ Layers::Create(C_LayerName_ItemsPreload, Items::GetManialink());
 Layers::SetType(C_LayerName_ItemsPreload, CUILayer::EUILayerType::Normal);
 Layers::Attach(C_LayerName_ItemsPreload);
 
-UsePvPCollisions = True;
-UsePvECollisions = True;
+Collisions::OnStartServer();
 ***
 
 ***Match_StartMap***
@@ -85,6 +87,8 @@ TunnelItem::Init();
 Wordle::Init();
 ControlRoom::Init();
 Challenge::Init();
+Hints::Init();
+Language::Init();
 ***
 
 Void OnRespawn(CSmPlayer Player, CMapLandmark Location) {
@@ -104,14 +108,31 @@ Void OnPlayerSpawn(CSmPlayer Player) {
 	EnergyWall::OnPlayerSpawn(Player);
 	MediaTracker::OnPlayerSpawn(Player);
 	ControlRoom::OnPlayerSpawn(Player);
-	
-	Player.TrustClientSimu = False;
-	Player.UseCrudeExtrapolation = False;
+	Collisions::OnPlayerSpawn(Player);
 }
 
 Void OnPlayerLeave(CUser User) {
 	Challenge::OnPlayerLeave(User);
 	TunnelMedia::OnPlayerLeave(User);
+}
+
+Void OnHint() {
+	Hints::SendHint([
+		Rooms::GetHintsRoom0(),
+		EnergyWall::GetHints(),
+		Simon::GetHints(),
+		Pipe::GetHints(),
+		Water::GetHints(),
+		XPuzzle::GetHints(),
+		Rooms::GetHintsRoom1(),
+		Challenge::GetHints(),
+		Wordle::GetHints(),
+		Turtle::GetHints(),
+		TunnelMedia::GetHints(),
+		TunnelItem::GetHints(),
+		ControlRoom::GetHints(),
+		Rooms::GetHintsRoom2()
+	]);
 }
 
 ***Match_PlayLoop***
@@ -134,11 +155,20 @@ foreach (Event in PendingEvents) {
 			OnPlayerLeave(Event.User);
 			UIManager.UIAll.SendChat(Event.User.Name ^ " left the Escape!");
 		}
+		case CSmModeEvent::EType::OnPlayerTriggersWaypoint: {
+			if (Event.Landmark.Tag == C_HintLandmarkTag) {
+				OnHint();
+			}
+		}
 	}
 }
 
+
 foreach (Command in ModeCommands::GetPendingCommands()) {
   switch (Command.Name) {
+		case "Command_hint": {
+			OnHint();
+		}
     case "Command_bot": {
 			Users_SetNbFakeUsers(Command.ValueInteger, 0);
     }
@@ -197,10 +227,10 @@ foreach (Command in ModeCommands::GetPendingCommands()) {
 					}
 					case "powersource": Items::CreatePowerSourceItem(Player);
 					case "helmet": Items::CreateHelmetItem(Player);
-					case "letteru": Items::CreateLetterUItem(Player);
-					case "letteri": Items::CreateLetterIItem(Player);
-					case "letterl": Items::CreateLetterLItem(Player);
-					case "lettern": Items::CreateLetterNItem(Player);
+					case "u": Items::CreateLetterUItem(Player);
+					case "i": Items::CreateLetterIItem(Player);
+					case "l": Items::CreateLetterLItem(Player);
+					case "n": Items::CreateLetterNItem(Player);
 					case "orb": Items::CreateOrbItem(Player);
 					case "bottle": Items::CreateBottleItem(Player);
 					case "key": Items::CreateKeyItem(Player);
@@ -228,6 +258,7 @@ TunnelItem::Loop();
 Wordle::Loop();
 ControlRoom::Loop();
 Challenge::Loop();
+Language::Loop();
 
 foreach (Player => HasRequest in RoomsRequestRespawn::GetRequests()) {
 	if (HasRequest) {

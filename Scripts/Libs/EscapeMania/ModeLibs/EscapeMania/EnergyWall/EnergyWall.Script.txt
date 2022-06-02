@@ -14,6 +14,26 @@ Void Init() {
 	G_WallState = 10;
 }
 
+Text[] GetHints() {
+	declare Text[] Hints;
+	if (G_WallState == 0) {
+		return Hints;
+	}
+
+	Hints.add("The next puzzle you want to solve is the wall with red and blue triangles.");
+	if (G_WallState == 10) {
+		Hints.add("Did you notice that someone's head is spinning... Where can you spin?");
+		Hints.add("You need to spin around the holes with a red booster.");
+	} else {
+		Hints.add("Did you see an  pop up in your screen? Have you checked the wall with red and blue triangles.");
+		Hints.add("When you do a spin around the holes with a red booster, it lowers the wall by one block each time.");
+		Hints.add("Spin around the holes with a red booster " ^ (G_WallState - 1) ^ " more times!");
+	}
+	Hints.add("<END>");
+
+	return Hints;
+}
+
 Void OnPlayerSpawn(CSmPlayer Player) {
 	MediaTracker::SetMediaTracker(Player, C_MediaTrackerClipPrefix ^ G_WallState, C_MediaTrackerPriority);
 }
