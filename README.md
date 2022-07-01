@@ -4,6 +4,13 @@ The first Escape Room within Trackmania!
 Come to our Discord if you are interested in playing it or building another Escape Room!
 * https://discord.gg/2TyyWvvJrN
 
+# Videos
+
+If you want to see how it looks like (beware of being spoiled), here are videos from streamers:
+
+<a href="https://www.youtube.com/watch?v=XsdEF1y2oKk"><img width="359" alt="image" src="https://user-images.githubusercontent.com/197597/176797466-1e7dc211-2ece-4298-b273-18708f4eefc5.png"> by Yannex (French)</a>
+
+
 # How to run a game
 
 Unfortunately, it's a bit of an involved setup. Should take you about 10 minutes. It works either on Windows or Linux.
