@@ -1,6 +1,6 @@
 // #RequireContext CSmMode
 
-#Extends "Libs/Nadeo/TMNext/TrackMania/Modes/TMNextBase.Script.txt"
+#Extends "Modes/Nadeo/Trackmania/Base/TrackmaniaBase.Script.txt"
 
 #Include "Libs/EscapeMania/ModeLibs/EscapeMania/Rooms/Rooms.Script.txt" as Rooms
 #Include "Libs/EscapeMania/ModeLibs/EscapeMania/Rooms/RoomsRequestRespawn.Script.txt" as RoomsRequestRespawn
@@ -148,7 +148,7 @@ foreach (Event in PendingEvents) {
 		case CSmModeEvent::EType::OnPlayerRequestRespawn: {
 			OnRespawn(Event.Player, Null);
 		}
-		case CSmModeEvent::EType::OnPlayerAdded: {	
+		case CSmModeEvent::EType::OnPlayerAdded: {
 			UIManager.UIAll.SendChat(Event.Player.User.Name ^ " joined the Escape!");
 		}
 		case CSmModeEvent::EType::OnPlayerRemoved: {
