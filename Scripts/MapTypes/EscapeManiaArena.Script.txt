@@ -18,11 +18,10 @@
 #Include "TextLib" as TL
 #Include "ColorLib" as CL
 
-#Include "Libs/Nadeo/TMNext/TrackMania/ColorPalette.Script.txt"						as ColorPalette
-#Include "Libs/Nadeo/ModeLibs/Legacy/MapType.Script.txt"									as MapType
-#Include "Libs/Nadeo/CommonLibs/Common/ReportContext.Script.txt"					as ReportContext
-#Include "Libs/Nadeo/TMNext/TrackMania/Editor/MapType.Script.txt"					as TMMapType
-#Include "Modes/TrackMania/TM_RaceTest_Local.Script.txt"									as RaceTest
+#Include "Libs/Nadeo/CMGame/Utils/Stylesheet.Script.txt" as Stylesheet
+#Include "Libs/Nadeo/CMGame/Modes/Legacy/MapType.Script.txt" as MapType
+#Include "Libs/Nadeo/Trackmania/MapEditor/MapType.Script.txt" as TMMapType
+#Include "Modes/TrackMania/TM_RaceTest_Local.Script.txt" as RaceTest
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
 // Constants
@@ -92,8 +91,8 @@ Void UpdateValidability() {
 
 /// Returns the anchor editing UI as Text
 Text GetEditAnchorManialink() {
-	declare Color_HeaderPanelBackground = ColorPalette::C_Color_GreenTwo;
-	declare Color_BodyPanelBackground = ColorPalette::C_Color_GreenThree;
+	declare Color_HeaderPanelBackground = Stylesheet::C_ColorHex6_GreenTwo;
+	declare Color_BodyPanelBackground = Stylesheet::C_ColorHex6_GreenThree;
 
 	return """
 <manialink version="3" name="FlagRushArena_AnchorEdit">
@@ -298,7 +297,6 @@ Void UpdateEditedAnchor() {
 
 Void PlayTestRun() {
 	TMMapType::PlayTestRun_Yield();
-	ReportContext::SetContext(System, ReportContext::C_Context_MapEditor);
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
@@ -307,7 +305,6 @@ Void PlayTestRun() {
 
 main() {
 	HoldLoadingScreen = True;
-	ReportContext::SetContext(System, ReportContext::C_Context_MapEditor);
 	TMMapType::ApplyDecoImages();
 	
 	MapType::SetVersion(C_MapTypeVersion);
